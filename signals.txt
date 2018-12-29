@@ -1,0 +1,167 @@
+On :
+
+Télécommande :
+
+RF frame : FE 27 05 78 0E 6F A0
+
+RF footprint : FE - OK
+
+RF global channel : CH_C (2)
+
+RF adress : 70 57
+
+RF channel : CH_1 (8)
+
+Light status : ON
+
+Rolling code : E6 - OK
+
+Timestamp : FA
+
+
+
+Frame echo 2
+
+Frame echo 3
+
+Frame echo 4
+
+Frame echo 5
+
+
+
+
+Interupteur :
+
+RF frame : FE 74 53 98 1E 6F 90 
+
+RF footprint : FE - OK
+
+RF global channel : 7
+
+RF adress : 45 39
+
+RF channel : CH_1 (8)
+
+Light status : OFF
+
+Rolling code : E6 - OK
+
+Timestamp : F9
+
+
+
+Frame echo 2
+
+Frame echo 3
+
+Frame echo 4
+
+Frame echo 5
+
+Frame echo 6
+
+Frame echo 7
+
+Frame echo 8
+
+Frame echo 9
+
+Frame echo 10
+
+Frame echo 11
+
+Frame echo 12
+
+Frame echo 13
+
+Frame echo 14
+
+
+
+
+
+
+
+Off :
+
+Télécomande :
+
+
+RF frame : FE 27 05 78 0E 6F A0
+
+RF footprint : FE - OK
+
+RF global channel : CH_C (2)
+
+RF adress : 70 57
+
+RF channel : CH_1 (8)
+
+Light status : ON
+
+Rolling code : E6 - OK
+
+Timestamp : FA
+
+
+
+Frame echo 2
+
+Frame echo 3
+
+Frame echo 4
+
+Frame echo 5
+
+
+
+
+Interupteur :
+
+
+RF frame : FE 74 53 98 1E 6F 90
+
+RF footprint : FE - OK
+
+RF global channel : 7
+
+RF adress : 45 39
+
+RF channel : CH_1 (8)
+
+Light status : OFF
+
+Rolling code : E6 - OK
+
+Timestamp : F9
+
+
+
+Frame echo 2
+
+Frame echo 3
+
+Frame echo 4
+
+Frame echo 5
+
+Frame echo 6
+
+Frame echo 7
+
+Frame echo 8
+
+Frame echo 9
+
+Frame echo 10
+
+Frame echo 11
+
+Frame echo 12
+
+Frame echo 13
+
+Frame echo 14
+
+

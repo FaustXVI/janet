@@ -3,5 +3,6 @@ stdenv.mkDerivation {
         name = "janet";
         buildInputs = [
           arduino
+          fritzing
         ];
     }
