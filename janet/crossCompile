@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+docker run -it --rm \
+  -v $(pwd):/source \
+  -v $(pwd)/.cargo/git:/root/.cargo/git \
+  -v $(pwd)/.cargo/registry:/root/.cargo/registry \
+  dlecan/rust-crosscompiler-arm:stable "$@"
+
+sudo chown -R `stat -c %u:%g $HOME` $(pwd)
