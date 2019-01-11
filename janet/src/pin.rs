@@ -1,5 +1,9 @@
 use sysfs_gpio::Pin;
-use crate::led::Switchable;
+
+pub trait Switchable {
+    fn switch_on(&self) -> ();
+    fn switch_off(&self) -> ();
+}
 
 impl Switchable for Pin {
     fn switch_on(&self) -> () {
@@ -15,9 +19,16 @@ impl Switchable for Pin {
 pub mod mock {
     use super::*;
     use std::cell::RefCell;
+    use crate::pin::mock::PinState::*;
+
+    #[derive(Debug,Ord, PartialOrd, Eq, PartialEq)]
+    pub enum PinState{
+        ON,
+        OFF
+    }
 
     pub struct InMemoryPin {
-        pub states: RefCell<Vec<bool>>
+        pub states: RefCell<Vec<PinState>>
     }
 
     impl InMemoryPin {
@@ -30,11 +41,11 @@ pub mod mock {
 
     impl Switchable for InMemoryPin {
         fn switch_on(&self) -> () {
-            self.states.borrow_mut().push(true);
+            self.states.borrow_mut().push(ON);
         }
 
         fn switch_off(&self) -> () {
-            self.states.borrow_mut().push(false);
+            self.states.borrow_mut().push(OFF);
         }
     }
 }

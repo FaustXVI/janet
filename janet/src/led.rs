@@ -1,10 +1,5 @@
 use std::time::Duration;
-
-
-pub trait Switchable {
-    fn switch_on(&self) -> ();
-    fn switch_off(&self) -> ();
-}
+use crate::pin::Switchable;
 
 pub fn blink(led: &impl Switchable, mut pause: impl FnMut(Duration) -> ()) -> ()
 {
@@ -21,6 +16,7 @@ pub fn blink(led: &impl Switchable, mut pause: impl FnMut(Duration) -> ()) -> ()
 mod should {
     use super::*;
     use crate::pin::mock::InMemoryPin;
+    use crate::pin::mock::PinState::*;
 
     #[test]
     fn alternate_on_and_off() {
@@ -28,8 +24,8 @@ mod should {
         let mut durations: Vec<Duration> = vec![];
         blink(&led, |d| { durations.push(d) });
         let vec = led.states.into_inner();
-        let truthfull = vec.iter().filter(|&&b| b).count();
-        let falsefull = vec.iter().filter(|&&b| b).count();
+        let truthfull = vec.iter().filter(|&b| b.eq(&ON)).count();
+        let falsefull = vec.iter().filter(|&b| b.eq(&OFF)).count();
         assert_eq!(truthfull, 10);
         assert_eq!(truthfull, falsefull);
         assert_eq!(durations.len(), truthfull + falsefull)
