@@ -13,5 +13,5 @@ fn main() {
         sleep(Duration::from_millis(500));
         led.set_direction(Direction::Low).unwrap();
     };
-    blink(&led, |d| sleep(d));
+    blink(&led);
 }
