@@ -1,57 +1,12 @@
 use crate::pin::Switchable;
 use std::time::Duration;
+use crate::radio_emitter::RadioEmitter;
 
 const T_TIME: Duration = Duration::from_micros(400);
 const H_TIME: Duration = Duration::from_micros(2400);
 
-pub enum Order {
-    LittleEndian,
-    LeastSignificant,
-}
-
-impl IntoIterator for Order {
-    type Item = u8;
-    type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        match self {
-            Order::LittleEndian => {
-                let v: Vec<u8> = (0..8).rev().collect();
-                v.into_iter()
-            }
-            Order::LeastSignificant => {
-                let v: Vec<u8> = (0..4).rev().collect();
-                v.into_iter()
-            }
-        }
-    }
-}
-
-
-fn most_significant_bits(data: u16) -> u8 {
-    ((data & 0xFF00) >> 8) as u8
-}
-
-fn least_significant_bits(data: u16) -> u8 {
-    (data & 0x00FF) as u8
-}
-
 struct Blyss<T: Switchable> {
     emitter: Box<T>
-}
-
-trait RadioEmitter {
-    fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> ();
-    fn send_byte(&self, data: u8) -> () {
-        self.send_bits(data, Order::LittleEndian);
-    }
-
-    fn send_2bytes(&self, data: u16) -> () {
-        self.send_byte(most_significant_bits(data));
-        self.send_byte(least_significant_bits(data));
-    }
-    fn header(&self) -> ();
-    fn footer(&self) -> ();
 }
 
 impl<T: Switchable> Blyss<T> {
@@ -82,15 +37,6 @@ impl<T: Switchable> RadioEmitter for Blyss<T> {
         }
     }
 
-    fn send_byte(&self, data: u8) -> () {
-        self.send_bits(data, Order::LittleEndian);
-    }
-
-    fn send_2bytes(&self, data: u16) -> () {
-        self.send_byte(most_significant_bits(data));
-        self.send_byte(least_significant_bits(data));
-    }
-
     fn header(&self) -> () {
         self.emitter.switch_on_during(H_TIME);
     }
@@ -108,6 +54,7 @@ mod should {
     use super::*;
     use galvanic_assert::matchers::collection::*;
     use std::time::Duration;
+    use crate::radio_emitter::Order;
 
     macro_rules! zero {
     ()=>{
@@ -182,7 +129,7 @@ mod should {
             ]))
         ] {
             let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
-            signal_pin.send_byte(data);
+            signal_pin.send_bits(data, Order::LittleEndian);
             let states = signal_pin.emitter.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
         }
@@ -223,126 +170,8 @@ mod should {
         }
     }
 
-    #[test]
-    fn send_two_bytes() {
-        for (data, expected) in vec![
-            (0b0000000000000000, flatten(vec![
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-                zero!(),
-            ])),
-            (0b1101010101010101, flatten(vec![
-                one!(),
-                one!(),
-                zero!(),
-                one!(),
-                zero!(),
-                one!(),
-                zero!(),
-                one!(),
-                zero!(),
-                one!(),
-                zero!(),
-                one!(),
-                zero!(),
-                one!(),
-                zero!(),
-                one!(),
-            ]))
-        ] {
-            let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
-            signal_pin.send_2bytes(data);
-            let states = signal_pin.emitter.states.into_inner();
-            assert_that!(&states, contains_in_order(expected));
-        }
-    }
-
     fn flatten(binaries: Vec<Vec<(PinState, Duration)>>) -> Vec<(PinState, Duration)> {
         binaries.iter().flat_map(|t| t.iter())
             .map(|t| t.to_owned()).collect()
-    }
-}
-
-#[cfg(test)]
-pub mod mock {
-    use super::*;
-    use std::cell::RefCell;
-    use galvanic_assert::matchers::collection::*;
-
-    #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
-    pub enum Sent {
-        HEADER,
-        FOOTER,
-        DATA(u8, Vec<u8>),
-    }
-
-    pub struct InMemoryRadioEmitter {
-        pub states: RefCell<Vec<Sent>>
-    }
-
-    impl InMemoryRadioEmitter {
-        pub fn new() -> Self {
-            InMemoryRadioEmitter { states: RefCell::new(vec![]) }
-        }
-    }
-
-    impl RadioEmitter for InMemoryRadioEmitter {
-        fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> () {
-            self.states.borrow_mut().push(Sent::DATA(data, range.into_iter().collect()))
-        }
-
-        fn header(&self) -> () {
-            self.states.borrow_mut().push(Sent::HEADER)
-        }
-
-        fn footer(&self) -> () {
-            self.states.borrow_mut().push(Sent::FOOTER)
-        }
-    }
-
-    #[test]
-    fn send_header() {
-        let emitter = InMemoryRadioEmitter::new();
-        emitter.header();
-        let states = emitter.states.into_inner();
-        assert_that!(&states, contains_in_order(vec![
-        Sent::HEADER
-        ]));
-    }
-
-    #[test]
-    fn send_footer() {
-        let emitter = InMemoryRadioEmitter::new();
-        emitter.footer();
-        let states = emitter.states.into_inner();
-        assert_that!(&states, contains_in_order(vec![
-        Sent::FOOTER
-        ]));
-    }
-
-    #[test]
-    fn send_data() {
-        let emitter = InMemoryRadioEmitter::new();
-        emitter.send_byte(0);
-        emitter.send_bits(10, 0..4);
-        let states = emitter.states.into_inner();
-        let expected = vec![
-            Sent::DATA(0, Order::LittleEndian.into_iter().collect()),
-            Sent::DATA(10, (0..4).collect())
-        ];
-        assert_that!(&states, contains_in_order(expected));
     }
 }
