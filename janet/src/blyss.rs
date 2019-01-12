@@ -39,7 +39,7 @@ fn one(radio: &impl Switchable) -> () {
 
 fn send_bits(radio: &impl Switchable, data: u8, range: impl IntoIterator<Item=u8>) -> () {
     for n in range {
-        let mask = 1 << n;
+        let mask = 0x01 << n;
         if (data & mask) == 0 {
             zero(radio);
         } else {
@@ -48,8 +48,21 @@ fn send_bits(radio: &impl Switchable, data: u8, range: impl IntoIterator<Item=u8
     }
 }
 
-fn send_8bits(radio: &impl Switchable, data: u8) -> () {
+fn send_byte(radio: &impl Switchable, data: u8) -> () {
     send_bits(radio, data, Order::LittleEndian);
+}
+
+fn send_2bytes(radio: &impl Switchable, data: u16) -> () {
+    send_byte(radio, most_significant_bits(data));
+    send_byte(radio, least_significant_bits(data));
+}
+
+fn most_significant_bits(data: u16) -> u8 {
+    ((data & 0xFF00) >> 8) as u8
+}
+
+fn least_significant_bits(data: u16) -> u8 {
+    (data & 0x00FF) as u8
 }
 
 fn header(radio: &impl Switchable) -> () {
@@ -143,7 +156,7 @@ mod should {
             ]))
         ] {
             let signal_pin = InMemoryPin::new();
-            send_8bits(&signal_pin, data);
+            send_byte(&signal_pin, data);
             let states = signal_pin.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
         }
@@ -179,6 +192,53 @@ mod should {
         ] {
             let signal_pin = InMemoryPin::new();
             send_bits(&signal_pin, data, Order::LeastSignificant);
+            let states = signal_pin.states.into_inner();
+            assert_that!(&states, contains_in_order(expected));
+        }
+    }
+
+    #[test]
+    fn send_two_bytes() {
+        for (data, expected) in vec![
+            (0b0000000000000000, flatten(vec![
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+                zero!(),
+            ])),
+            (0b1101010101010101, flatten(vec![
+                one!(),
+                one!(),
+                zero!(),
+                one!(),
+                zero!(),
+                one!(),
+                zero!(),
+                one!(),
+                zero!(),
+                one!(),
+                zero!(),
+                one!(),
+                zero!(),
+                one!(),
+                zero!(),
+                one!(),
+            ]))
+        ] {
+            let signal_pin = InMemoryPin::new();
+            send_2bytes(&signal_pin, data);
             let states = signal_pin.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
         }
