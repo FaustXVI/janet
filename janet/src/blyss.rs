@@ -40,6 +40,20 @@ struct Blyss<T: Switchable> {
     emitter: Box<T>
 }
 
+trait RadioEmitter {
+    fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> ();
+    fn send_byte(&self, data: u8) -> () {
+        self.send_bits(data, Order::LittleEndian);
+    }
+
+    fn send_2bytes(&self, data: u16) -> () {
+        self.send_byte(most_significant_bits(data));
+        self.send_byte(least_significant_bits(data));
+    }
+    fn header(&self) -> ();
+    fn footer(&self) -> ();
+}
+
 impl<T: Switchable> Blyss<T> {
     fn new(emitter: Box<T>) -> Self {
         Blyss { emitter }
@@ -54,7 +68,9 @@ impl<T: Switchable> Blyss<T> {
         self.emitter.switch_off_during(T_TIME);
         self.emitter.switch_on_during(T_TIME * 2);
     }
+}
 
+impl<T: Switchable> RadioEmitter for Blyss<T> {
     fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> () {
         for n in range {
             let mask = 0x01 << n;
@@ -257,5 +273,76 @@ mod should {
     fn flatten(binaries: Vec<Vec<(PinState, Duration)>>) -> Vec<(PinState, Duration)> {
         binaries.iter().flat_map(|t| t.iter())
             .map(|t| t.to_owned()).collect()
+    }
+}
+
+#[cfg(test)]
+pub mod mock {
+    use super::*;
+    use std::cell::RefCell;
+    use galvanic_assert::matchers::collection::*;
+
+    #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
+    pub enum Sent {
+        HEADER,
+        FOOTER,
+        DATA(u8, Vec<u8>),
+    }
+
+    pub struct InMemoryRadioEmitter {
+        pub states: RefCell<Vec<Sent>>
+    }
+
+    impl InMemoryRadioEmitter {
+        pub fn new() -> Self {
+            InMemoryRadioEmitter { states: RefCell::new(vec![]) }
+        }
+    }
+
+    impl RadioEmitter for InMemoryRadioEmitter {
+        fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> () {
+            self.states.borrow_mut().push(Sent::DATA(data, range.into_iter().collect()))
+        }
+
+        fn header(&self) -> () {
+            self.states.borrow_mut().push(Sent::HEADER)
+        }
+
+        fn footer(&self) -> () {
+            self.states.borrow_mut().push(Sent::FOOTER)
+        }
+    }
+
+    #[test]
+    fn send_header() {
+        let emitter = InMemoryRadioEmitter::new();
+        emitter.header();
+        let states = emitter.states.into_inner();
+        assert_that!(&states, contains_in_order(vec![
+        Sent::HEADER
+        ]));
+    }
+
+    #[test]
+    fn send_footer() {
+        let emitter = InMemoryRadioEmitter::new();
+        emitter.footer();
+        let states = emitter.states.into_inner();
+        assert_that!(&states, contains_in_order(vec![
+        Sent::FOOTER
+        ]));
+    }
+
+    #[test]
+    fn send_data() {
+        let emitter = InMemoryRadioEmitter::new();
+        emitter.send_byte(0);
+        emitter.send_bits(10, 0..4);
+        let states = emitter.states.into_inner();
+        let expected = vec![
+            Sent::DATA(0, Order::LittleEndian.into_iter().collect()),
+            Sent::DATA(10, (0..4).collect())
+        ];
+        assert_that!(&states, contains_in_order(expected));
     }
 }
