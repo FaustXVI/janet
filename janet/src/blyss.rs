@@ -27,35 +27,6 @@ impl IntoIterator for Order {
     }
 }
 
-fn zero(radio: &impl Switchable) -> () {
-    radio.switch_off_during(T_TIME * 2);
-    radio.switch_on_during(T_TIME);
-}
-
-fn one(radio: &impl Switchable) -> () {
-    radio.switch_off_during(T_TIME);
-    radio.switch_on_during(T_TIME * 2);
-}
-
-fn send_bits(radio: &impl Switchable, data: u8, range: impl IntoIterator<Item=u8>) -> () {
-    for n in range {
-        let mask = 0x01 << n;
-        if (data & mask) == 0 {
-            zero(radio);
-        } else {
-            one(radio);
-        }
-    }
-}
-
-fn send_byte(radio: &impl Switchable, data: u8) -> () {
-    send_bits(radio, data, Order::LittleEndian);
-}
-
-fn send_2bytes(radio: &impl Switchable, data: u16) -> () {
-    send_byte(radio, most_significant_bits(data));
-    send_byte(radio, least_significant_bits(data));
-}
 
 fn most_significant_bits(data: u16) -> u8 {
     ((data & 0xFF00) >> 8) as u8
@@ -65,14 +36,53 @@ fn least_significant_bits(data: u16) -> u8 {
     (data & 0x00FF) as u8
 }
 
-fn header(radio: &impl Switchable) -> () {
-    radio.switch_on_during(H_TIME);
+struct Blyss<T: Switchable> {
+    emitter: Box<T>
 }
 
-fn footer(radio: &impl Switchable) -> () {
-    radio.switch_off_during(H_TIME * 10);
-}
+impl<T: Switchable> Blyss<T> {
+    fn new(emitter: Box<T>) -> Self {
+        Blyss { emitter }
+    }
 
+    fn zero(&self) -> () {
+        self.emitter.switch_off_during(T_TIME * 2);
+        self.emitter.switch_on_during(T_TIME);
+    }
+
+    fn one(&self) -> () {
+        self.emitter.switch_off_during(T_TIME);
+        self.emitter.switch_on_during(T_TIME * 2);
+    }
+
+    fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> () {
+        for n in range {
+            let mask = 0x01 << n;
+            if (data & mask) == 0 {
+                self.zero();
+            } else {
+                self.one();
+            }
+        }
+    }
+
+    fn send_byte(&self, data: u8) -> () {
+        self.send_bits(data, Order::LittleEndian);
+    }
+
+    fn send_2bytes(&self, data: u16) -> () {
+        self.send_byte(most_significant_bits(data));
+        self.send_byte(least_significant_bits(data));
+    }
+
+    fn header(&self) -> () {
+        self.emitter.switch_on_during(H_TIME);
+    }
+
+    fn footer(&self) -> () {
+        self.emitter.switch_off_during(H_TIME * 10);
+    }
+}
 
 #[cfg(test)]
 mod should {
@@ -103,9 +113,9 @@ mod should {
 
     #[test]
     fn send_header() {
-        let signal_pin = InMemoryPin::new();
-        header(&signal_pin);
-        let states = signal_pin.states.into_inner();
+        let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+        signal_pin.header();
+        let states = signal_pin.emitter.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
         (ON, Duration::from_micros(2400)),
         ]));
@@ -113,9 +123,9 @@ mod should {
 
     #[test]
     fn send_footer() {
-        let signal_pin = InMemoryPin::new();
-        footer(&signal_pin);
-        let states = signal_pin.states.into_inner();
+        let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+        signal_pin.footer();
+        let states = signal_pin.emitter.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
         (OFF, Duration::from_micros(24000)),
         ]));
@@ -155,9 +165,9 @@ mod should {
                 one!(),
             ]))
         ] {
-            let signal_pin = InMemoryPin::new();
-            send_byte(&signal_pin, data);
-            let states = signal_pin.states.into_inner();
+            let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+            signal_pin.send_byte(data);
+            let states = signal_pin.emitter.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
         }
     }
@@ -190,9 +200,9 @@ mod should {
                 zero!(),
             ])),
         ] {
-            let signal_pin = InMemoryPin::new();
-            send_bits(&signal_pin, data, Order::LeastSignificant);
-            let states = signal_pin.states.into_inner();
+            let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+            signal_pin.send_bits(data, Order::LeastSignificant);
+            let states = signal_pin.emitter.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
         }
     }
@@ -237,9 +247,9 @@ mod should {
                 one!(),
             ]))
         ] {
-            let signal_pin = InMemoryPin::new();
-            send_2bytes(&signal_pin, data);
-            let states = signal_pin.states.into_inner();
+            let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+            signal_pin.send_2bytes(data);
+            let states = signal_pin.emitter.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
         }
     }
