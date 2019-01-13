@@ -5,12 +5,12 @@ use crate::radio_emitter::RadioEmitter;
 const T_TIME: Duration = Duration::from_micros(400);
 const H_TIME: Duration = Duration::from_micros(2400);
 
-struct Blyss<T: Switchable> {
+pub struct Blyss<T: Switchable> {
     emitter: Box<T>
 }
 
 impl<T: Switchable> Blyss<T> {
-    fn new(emitter: Box<T>) -> Self {
+    pub fn new(emitter: Box<T>) -> Self {
         Blyss { emitter }
     }
 
