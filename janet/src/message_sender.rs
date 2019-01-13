@@ -36,6 +36,11 @@ pub struct Message {
 }
 
 impl Message {
+    /*
+    const byte RF_ROLLING_CODE[] = {
+        0x98, 0xDA, 0x1E, 0xE6, 0x67
+    };
+    */
     pub fn new(address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
         Message {
             timestamp: 0,
