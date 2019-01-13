@@ -10,8 +10,8 @@ pub struct Blyss<T: Switchable> {
 }
 
 impl<T: Switchable> Blyss<T> {
-    pub fn new(emitter: Box<T>) -> Self {
-        Blyss { emitter }
+    pub fn new(emitter: T) -> Self {
+        Blyss { emitter : Box::new(emitter)}
     }
 
     fn zero(&self) -> () {
@@ -76,7 +76,7 @@ mod should {
 
     #[test]
     fn send_header() {
-        let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+        let signal_pin = Blyss::new(InMemoryPin::new());
         signal_pin.header();
         let states = signal_pin.emitter.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
@@ -86,7 +86,7 @@ mod should {
 
     #[test]
     fn send_footer() {
-        let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+        let signal_pin = Blyss::new(InMemoryPin::new());
         signal_pin.footer();
         let states = signal_pin.emitter.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
@@ -128,7 +128,7 @@ mod should {
                 one!(),
             ]))
         ] {
-            let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+            let signal_pin = Blyss::new(InMemoryPin::new());
             signal_pin.send_bits(data, Order::LittleEndian);
             let states = signal_pin.emitter.states.into_inner();
             assert_that!(&states, contains_in_order(expected));
@@ -163,7 +163,7 @@ mod should {
                 zero!(),
             ])),
         ] {
-            let signal_pin = Blyss::new(Box::new(InMemoryPin::new()));
+            let signal_pin = Blyss::new(InMemoryPin::new());
             signal_pin.send_bits(data, Order::LeastSignificant);
             let states = signal_pin.emitter.states.into_inner();
             assert_that!(&states, contains_in_order(expected));

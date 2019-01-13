@@ -18,7 +18,7 @@ fn main() {
         sleep(Duration::from_millis(500));
         pin.set_direction(Direction::Low).unwrap();
     };
-    let sender = MessageSender::new(Blyss::new(Box::new(pin)));
+    let sender = MessageSender::new(Blyss::new(pin));
     let switch_on = Message::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On);
     let switch_off = Message::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::Off);
     for _ in 0..10 {
