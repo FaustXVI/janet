@@ -59,15 +59,17 @@ impl<T: RadioEmitter> MessageSender<T> {
     }
 
     pub fn send(&self, message: &Message) {
-        self.radio.header();
-        self.radio.send_byte(message.brand);
-        self.radio.send_bits(message.channel as u8, Order::LeastSignificant);
-        self.radio.send_2bytes(message.address);
-        self.radio.send_bits(message.sub_channel as u8,Order::LeastSignificant);
-        self.radio.send_bits(message.status as u8,Order::LeastSignificant);
-        self.radio.send_byte(message.rolling_code as u8);
-        self.radio.send_byte(message.timestamp as u8);
-        self.radio.footer();
+        for _ in 0..13 {
+            self.radio.header();
+            self.radio.send_byte(message.brand);
+            self.radio.send_bits(message.channel as u8, Order::LeastSignificant);
+            self.radio.send_2bytes(message.address);
+            self.radio.send_bits(message.sub_channel as u8, Order::LeastSignificant);
+            self.radio.send_bits(message.status as u8, Order::LeastSignificant);
+            self.radio.send_byte(message.rolling_code as u8);
+            self.radio.send_byte(message.timestamp as u8);
+            self.radio.footer();
+        }
     }
 }
 
@@ -86,7 +88,7 @@ mod should {
         let sent = emitter.radio.states.into_inner();
         let full_byte: Vec<u8> = Order::LittleEndian.into_iter().collect();
         let least_significant_bits: Vec<u8> = Order::LeastSignificant.into_iter().collect();
-        let expected = vec![
+        let expected = repeat_13_times(vec![
             Sent::HEADER,
             Sent::DATA(0xFE, full_byte.clone()),
             Sent::DATA(0x02, least_significant_bits.clone()),
@@ -97,7 +99,12 @@ mod should {
             Sent::DATA(0x98, full_byte.clone()),
             Sent::DATA(0x00, full_byte.clone()),
             Sent::FOOTER,
-        ];
+        ]);
         assert_that!(&sent, contains_in_order(expected));
+    }
+
+    fn repeat_13_times(sent: Vec<Sent>) -> Vec<Sent> {
+        vec![sent].iter().cycle().take(13).flat_map(|t| t.iter())
+            .map(|t| t.to_owned()).collect()
     }
 }

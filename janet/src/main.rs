@@ -22,13 +22,9 @@ fn main() {
     let switch_on = Message::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On);
     let switch_off = Message::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::Off);
     for _ in 0..10 {
-        for _ in 0..13 {
-            sender.send(&switch_on);
-        }
+        sender.send(&switch_on);
         sleep(Duration::from_secs(5));
-        for _ in 0..13 {
-            sender.send(&switch_off);
-        }
+        sender.send(&switch_off);
         sleep(Duration::from_secs(5));
     };
 }
