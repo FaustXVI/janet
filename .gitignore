@@ -1,6 +1,4 @@
-build
-*.zip
-janet/.cargo
-janet/target
-janet/.idea
-janet/nohup.out
+.cargo
+target
+.idea
+nohup.out
