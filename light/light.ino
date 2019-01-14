@@ -90,8 +90,12 @@ inline void send(byte data) {
 void send_buffer(byte data[7]) {
   send_header();
   for(byte i = 0; i <= 6; ++i) {
+    char printLineA[17];
+    sprintf (printLineA, "%02x", data[i]);
+    Serial.print(printLineA);
     send(data[i]);
   }
+  Serial.println("");
   send_footer();
 }
 
@@ -101,8 +105,9 @@ void send_buffer(byte data[7]) {
  * @param data Pointer to a RF frame-data buffer
  */
 inline void send_command(byte data[7]) {
-  for(byte i = 0; i < nb_frames; ++i)
+  for(byte i = 0; i < nb_frames; ++i){
     send_buffer(data);
+  }
 }
 
 
@@ -111,7 +116,8 @@ inline void send_command(byte data[7]) {
 byte timestamp(){
   static byte last_token = 0x6D;
   last_token += 10;
-  return last_token;
+  //return last_token;
+  return 0x6D;
 }
 
 
@@ -123,12 +129,12 @@ byte timestamp(){
 void generate_token(byte data[7]) {
   byte last_token = timestamp();
   data[5] = (data[5] & 0xF0) | ((last_token & 0xF0) >> 4);
-  data[6] = (last_token & 0x0F) << 4;x.....
+  data[6] = (last_token & 0x0F) << 4;
 }
 
 /** "Rolling code" (normally avoid frame spoofing) */
 const byte RF_ROLLING_CODE[] = {
-  0x89, 0xAD, 0xE1, 0x6E, 0x76
+  0x89/*, 0xAD, 0xE1, 0x6E, 0x76*/
 };
 
 byte next_rolling_code(){
@@ -213,19 +219,19 @@ inline void switchTo(Status state){
   /** Frame-data buffer (key ID + status flag + rolling code + token */
   byte RF_BUFFER[7];
   createMessage(0x7057, CH_C, CH_1, state, RF_BUFFER);
-
+  
   /* Send RF frame */
   send_command(RF_BUFFER);
 }
 
 
 inline void switchOn(){
-  Serial.print("State: ON");
+  Serial.println("State: ON");
   switchTo(ON);
 }
 
 inline void switchOff(){
-  Serial.print("State: OFF");
+  Serial.println("State: OFF");
   switchTo(OFF);
 }
 
