@@ -43,7 +43,7 @@ impl Message {
     */
     pub fn new(address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
         Message {
-            timestamp: 0,
+            timestamp: 0x6D,
             brand: 0xFE,
             rolling_code: 0x98,
             address,
@@ -57,6 +57,8 @@ impl Message {
 pub struct MessageSender<T: RadioEmitter> {
     radio: Box<T>
 }
+
+const PADDING_VALUE: u8 = 0;
 
 impl<T: RadioEmitter> MessageSender<T> {
     pub fn new(radio: T) -> Self {
@@ -73,6 +75,7 @@ impl<T: RadioEmitter> MessageSender<T> {
             self.radio.send_bits(message.status as u8, Order::LeastSignificant);
             self.radio.send_byte(message.rolling_code as u8);
             self.radio.send_byte(message.timestamp as u8);
+            self.radio.send_bits(PADDING_VALUE, Order::LeastSignificant);
             self.radio.footer();
         }
     }
@@ -102,7 +105,8 @@ mod should {
             Sent::DATA(0x08, least_significant_bits.clone()),
             Sent::DATA(0x00, least_significant_bits.clone()),
             Sent::DATA(0x98, full_byte.clone()),
-            Sent::DATA(0x00, full_byte.clone()),
+            Sent::DATA(0x6D, full_byte.clone()),
+            Sent::DATA(0x00, least_significant_bits.clone()),
             Sent::FOOTER,
         ]);
         assert_that!(&sent, contains_in_order(expected));
