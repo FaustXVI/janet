@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 sysfs_gpio = "0.5"
+rouille = "3.0.0"
 
 [dev-dependencies]
 galvanic-assert = "0.8.7"
