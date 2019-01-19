@@ -3,16 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <title>Janet</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+          integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
 </head>
 <body>
-<h1>Janet</h1>
-<form action="/api/light" method="post" >
-    <input type="hidden" name="status" value="On">
-    <input type="submit" value="On">
-</form>
-<form action="/api/light" method="post" >
-    <input type="hidden" name="status" value="Off">
-    <input type="submit" value="Off">
-</form>
+<div class="container-fluid">
+    <h1>Janet</h1>
+    <div class="row p-3">
+        <img src="https://www.indiewire.com/wp-content/uploads/2018/10/NUP_183230_0177-e1538410951286.jpg?w=687"
+        class="rounded mx-auto d-block"/>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <form action="/api/light" method="post" class="form-group">
+                <input type="hidden" name="status" value="On">
+                <input type="submit" value="On" class="btn btn-lg btn-block btn-outline-dark">
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <form action="/api/light" method="post" class="form-group">
+                <input type="hidden" name="status" value="Off">
+                <input type="submit" value="Off" class="btn btn-dark btn-lg btn-block">
+            </form>
+        </div>
+    </div>
+</div>
 </body>
 </html>
