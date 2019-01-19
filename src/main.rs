@@ -1,15 +1,8 @@
 extern crate sysfs_gpio;
 
-use sysfs_gpio::Pin;
-use sysfs_gpio::Direction;
-use std::thread::sleep;
-use std::time::Duration;
-use janet::blyss_sender::MessageSender;
-use janet::blyss::Blyss;
 use janet::blyss_sender::Status;
 use std::env;
-use janet::house::MyHouse;
-use janet::house::House;
+use janet::raspberry::create_house;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -21,17 +14,6 @@ fn main() {
         }
         None => println!("usage : janet [On|Off]")
     }
-}
-
-fn create_house() -> Box<House> {
-    let pin = Pin::new(23);
-    pin.export().unwrap();
-    if pin.set_direction(Direction::Low).is_err() {
-        sleep(Duration::from_millis(500));
-        pin.set_direction(Direction::Low).unwrap();
-    };
-    let sender = MessageSender::new(Blyss::new(pin));
-    Box::new(MyHouse::new(sender))
 }
 
 fn from_command_line(arg: Vec<String>) -> Option<Status> {
