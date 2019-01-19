@@ -4,6 +4,6 @@ docker run -it --rm \
   -v $(pwd):/source \
   -v $(pwd)/.cargo/git:/root/.cargo/git \
   -v $(pwd)/.cargo/registry:/root/.cargo/registry \
-  dlecan/rust-crosscompiler-arm:stable "$@"
+  faustxvi/rust-crosscompiler-arm:nightly "$@"
 
 sudo chown -R `stat -c %u:%g $HOME` $(pwd)
