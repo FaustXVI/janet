@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
 
-docker run -it --rm \
-  -v $(pwd):/source \
-  -v $(pwd)/.cargo/git:/root/.cargo/git \
-  -v $(pwd)/.cargo/registry:/root/.cargo/registry \
-  faustxvi/rust-crosscompiler-arm:nightly "$@"
+cargo build --target arm-unknown-linux-gnueabihf --release
 
-sudo chown -R `stat -c %u:%g $HOME` $(pwd)
