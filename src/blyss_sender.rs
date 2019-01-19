@@ -1,13 +1,14 @@
 use crate::radio_emitter::RadioEmitter;
 use crate::radio_emitter::Order;
+use crate::sender::Sender;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone,Debug,Eq, PartialEq)]
 pub enum Status {
     On = 0x00,
     Off = 0x01,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone,Debug,Eq, PartialEq)]
 pub enum SubChannel {
     Channel1 = 0x08,
     Channel2 = 0x04,
@@ -17,7 +18,7 @@ pub enum SubChannel {
     AllChannels = 0x00,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone,Debug,Eq, PartialEq)]
 pub enum Channel {
     ChannelA = 0x00,
     ChannelB = 0x01,
@@ -25,7 +26,8 @@ pub enum Channel {
     ChannelD = 0x03,
 }
 
-pub struct Message {
+#[derive(Debug,Eq, PartialEq)]
+pub struct BlyssMessage {
     timestamp: u8,
     rolling_code: u8,
     status: Status,
@@ -35,14 +37,14 @@ pub struct Message {
     brand: u8,
 }
 
-impl Message {
+impl BlyssMessage {
     /*
     const byte RF_ROLLING_CODE[] = {
         0x98, 0xDA, 0x1E, 0xE6, 0x67
     };
     */
     pub fn new(address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
-        Message {
+        BlyssMessage {
             timestamp: 0x6D,
             brand: 0xFE,
             rolling_code: 0x98,
@@ -58,14 +60,18 @@ pub struct MessageSender<T: RadioEmitter> {
     radio: Box<T>
 }
 
-const PADDING_VALUE: u8 = 0;
-
 impl<T: RadioEmitter> MessageSender<T> {
     pub fn new(radio: T) -> Self {
         MessageSender { radio: Box::new(radio) }
     }
+}
 
-    pub fn send(&self, message: &Message) {
+const PADDING_VALUE: u8 = 0;
+
+impl<T: RadioEmitter> Sender for MessageSender<T> {
+    type Message = BlyssMessage;
+
+    fn send(&self, message: Self::Message) {
         for _ in 0..13 {
             self.radio.header();
             self.radio.send_byte(message.brand);
@@ -91,8 +97,8 @@ mod should {
     #[test]
     fn send_data() {
         let emitter = MessageSender::new(InMemoryRadioEmitter::new());
-        let message = Message::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On);
-        emitter.send(&message);
+        let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On);
+        emitter.send(message);
         let sent = emitter.radio.states.into_inner();
         let full_byte: Vec<u8> = Order::LittleEndian.into_iter().collect();
         let least_significant_bits: Vec<u8> = Order::LeastSignificant.into_iter().collect();

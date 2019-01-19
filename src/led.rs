@@ -1,11 +1,11 @@
 use std::time::Duration;
-use crate::pin::Switchable;
+use crate::pin::DigitalOutput;
 
-pub fn blink(led: &impl Switchable) -> ()
+pub fn blink(led: &impl DigitalOutput) -> ()
 {
     for _ in 0..10 {
-        led.switch_on_during(Duration::from_millis(500));
-        led.switch_off_during(Duration::from_millis(500));
+        led.high_during(Duration::from_millis(500));
+        led.low_during(Duration::from_millis(500));
     };
 }
 

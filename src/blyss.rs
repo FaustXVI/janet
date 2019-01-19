@@ -1,31 +1,31 @@
-use crate::pin::Switchable;
+use crate::pin::DigitalOutput;
 use std::time::Duration;
 use crate::radio_emitter::RadioEmitter;
 
 const T_TIME: Duration = Duration::from_micros(400);
 const H_TIME: Duration = Duration::from_micros(2400);
 
-pub struct Blyss<T: Switchable> {
+pub struct Blyss<T: DigitalOutput> {
     emitter: Box<T>
 }
 
-impl<T: Switchable> Blyss<T> {
+impl<T: DigitalOutput> Blyss<T> {
     pub fn new(emitter: T) -> Self {
         Blyss { emitter : Box::new(emitter)}
     }
 
     fn zero(&self) -> () {
-        self.emitter.switch_off_during(T_TIME * 2);
-        self.emitter.switch_on_during(T_TIME);
+        self.emitter.low_during(T_TIME * 2);
+        self.emitter.high_during(T_TIME);
     }
 
     fn one(&self) -> () {
-        self.emitter.switch_off_during(T_TIME);
-        self.emitter.switch_on_during(T_TIME * 2);
+        self.emitter.low_during(T_TIME);
+        self.emitter.high_during(T_TIME * 2);
     }
 }
 
-impl<T: Switchable> RadioEmitter for Blyss<T> {
+impl<T: DigitalOutput> RadioEmitter for Blyss<T> {
     fn send_bits(&self, data: u8, range: impl IntoIterator<Item=u8>) -> () {
         for n in range {
             let mask = 0x01 << n;
@@ -38,11 +38,11 @@ impl<T: Switchable> RadioEmitter for Blyss<T> {
     }
 
     fn header(&self) -> () {
-        self.emitter.switch_on_during(H_TIME);
+        self.emitter.high_during(H_TIME);
     }
 
     fn footer(&self) -> () {
-        self.emitter.switch_off_during(H_TIME * 10);
+        self.emitter.low_during(H_TIME * 10);
     }
 }
 

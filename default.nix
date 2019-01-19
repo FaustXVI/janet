@@ -9,8 +9,13 @@ pkgs.stdenv.mkDerivation {
   name = "janet";
   buildInputs = [
     pkgs.arduino
+    pkgs.rustup
     pkgs.fritzing
-    (pkgs.rustChannelOfTargets "nightly" "2018-12-30" [ "x86_64-unknown-linux-gnu" "arm-unknown-linux-gnueabihf" ])
+    ((pkgs.rustChannelOf { date = "2018-12-30"; channel = "nightly"; }).rust.override {
+      extensions = ["rust-src"];
+      targets = [ "x86_64-unknown-linux-gnu" "arm-unknown-linux-gnueabihf" ];
+    })
+    #(pkgs.rustChannelOfTargets "nightly" "2018-12-30" [ "x86_64-unknown-linux-gnu" "arm-unknown-linux-gnueabihf" ])
     arm.stdenv.cc
   ];
 }
