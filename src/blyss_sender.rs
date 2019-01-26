@@ -70,12 +70,12 @@ impl BlyssMessage {
 }
 
 pub struct MessageSender<T: RadioEmitter> {
-    radio: Box<T>
+    radio: T
 }
 
 impl<T: RadioEmitter> MessageSender<T> {
     pub fn new(radio: T) -> Self {
-        MessageSender { radio: Box::new(radio) }
+        MessageSender { radio}
     }
 }
 

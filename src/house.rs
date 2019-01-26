@@ -5,7 +5,7 @@ use crate::blyss_sender::Channel;
 use crate::blyss_sender::SubChannel;
 
 pub struct MyHouse<T: Sender<Message=BlyssMessage>> {
-    light: Box<T>
+    light: T
 }
 
 pub trait House {
@@ -14,7 +14,7 @@ pub trait House {
 
 impl<T: Sender<Message=BlyssMessage>> MyHouse<T> {
     pub fn new(light: T) -> Self {
-        MyHouse { light: Box::new(light) }
+        MyHouse { light}
     }
 }
 

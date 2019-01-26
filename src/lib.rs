@@ -5,7 +5,6 @@ extern crate sysfs_gpio;
 extern crate galvanic_assert;
 
 pub mod pin;
-pub mod led;
 pub mod radio_emitter;
 pub mod blyss_sender;
 pub mod sender;

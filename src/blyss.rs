@@ -6,12 +6,12 @@ const T_TIME: Duration = Duration::from_micros(400);
 const H_TIME: Duration = Duration::from_micros(2400);
 
 pub struct Blyss<T: DigitalOutput> {
-    emitter: Box<T>
+    emitter: T
 }
 
 impl<T: DigitalOutput> Blyss<T> {
     pub fn new(emitter: T) -> Self {
-        Blyss { emitter : Box::new(emitter)}
+        Blyss { emitter }
     }
 
     fn zero(&self) -> () {

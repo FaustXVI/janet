@@ -6,8 +6,6 @@ use crate::blyss_sender::MessageSender;
 use crate::blyss::Blyss;
 use crate::house::MyHouse;
 use std::thread::sleep;
-use std::sync::Arc;
-use std::sync::Mutex;
 use crate::pin::DigitalOutput;
 
 pub fn create_house() -> impl House {

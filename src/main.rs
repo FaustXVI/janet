@@ -2,26 +2,14 @@
 
 extern crate sysfs_gpio;
 
-use janet::blyss_sender::Status;
-use janet::raspberry::create_house;
 use janet::raspberry::create_fake_house;
 use rocket::State;
 use janet::house::House;
-use std::sync::Mutex;
 use std::sync::Arc;
-use janet::house::MyHouse;
-use janet::blyss_sender::MessageSender;
-use janet::blyss::Blyss;
-use janet::raspberry::FakeDigitalOutput;
-use std::sync::MutexGuard;
-use rocket::Response;
-use rocket::http::ContentType;
 use rocket_contrib::templates::Template;
 use rocket_contrib::serve::StaticFiles;
 use rocket::response::Redirect;
 use rocket::request::Form;
-use std::str::FromStr;
-use rocket::request::FromFormValue;
 use std::ops::Deref;
 
 
