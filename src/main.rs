@@ -26,12 +26,12 @@ use rocket::request::Form;
 extern crate rocket;
 
 pub struct Resolver {
-    house: Arc<Mutex<House + Send>>
+    house: Arc<House + Send + Sync>
 }
 
 impl Resolver {
-    fn get_house(&self) -> MutexGuard<House + Send + 'static> {
-        self.house.lock().unwrap()
+    fn get_house(&self) -> &House {
+        self.house.as_ref()
     }
 }
 
@@ -52,7 +52,7 @@ fn light(resolver: State<Resolver>, status: Form<NewStatus>) -> Redirect {
 fn main() {
     let house = create_fake_house();
     let resolver = Resolver {
-        house: Arc::new(Mutex::new(house))
+        house: Arc::new(house)
     };
     rocket::ignite()
         .attach(Template::fairing())
@@ -60,18 +60,6 @@ fn main() {
         .mount("/", StaticFiles::from("static"))
         .mount("/api", routes![light]).launch();
 }
-
-//fn main() {
-//    let args: Vec<String> = env::args().collect();
-//    let status = from_command_line(args);
-//    match status {
-//        Some(status) => {
-//            let house = create_house();
-//            house.light(status);
-//        }
-//        None => println!("usage : janet [On|Off]")
-//    }
-//}
 
 fn parse(arg: String) -> Option<Status> {
     match arg.as_str() {
