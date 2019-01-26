@@ -1,14 +1,27 @@
 use crate::radio_emitter::RadioEmitter;
 use crate::radio_emitter::Order;
 use crate::sender::Sender;
+use std::str::FromStr;
 
-#[derive(Copy, Clone,Debug,Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Status {
     On = 0x00,
     Off = 0x01,
 }
 
-#[derive(Copy, Clone,Debug,Eq, PartialEq)]
+impl FromStr for Status {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
+        match s {
+            "On" | "ON" | "on" => Ok(Status::On),
+            "Off" | "OFF" | "off" => Ok(Status::Off),
+            _ => Err("Unknown status")
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum SubChannel {
     Channel1 = 0x08,
     Channel2 = 0x04,
@@ -18,7 +31,7 @@ pub enum SubChannel {
     AllChannels = 0x00,
 }
 
-#[derive(Copy, Clone,Debug,Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Channel {
     ChannelA = 0x00,
     ChannelB = 0x01,
@@ -26,7 +39,7 @@ pub enum Channel {
     ChannelD = 0x03,
 }
 
-#[derive(Debug,Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct BlyssMessage {
     timestamp: u8,
     rolling_code: u8,
@@ -121,5 +134,16 @@ mod should {
     fn repeat_13_times(sent: Vec<Sent>) -> Vec<Sent> {
         vec![sent].iter().cycle().take(13).flat_map(|t| t.iter())
             .map(|t| t.to_owned()).collect()
+    }
+
+    #[test]
+    fn parse_status() {
+        assert_eq!("On".parse::<Status>().unwrap(), Status::On);
+        assert_eq!("ON".parse::<Status>().unwrap(), Status::On);
+        assert_eq!("on".parse::<Status>().unwrap(), Status::On);
+        assert_eq!("Off".parse::<Status>().unwrap(), Status::Off);
+        assert_eq!("OFF".parse::<Status>().unwrap(), Status::Off);
+        assert_eq!("off".parse::<Status>().unwrap(), Status::Off);
+        assert_eq!("plop".parse::<Status>().is_err(), true);
     }
 }

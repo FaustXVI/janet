@@ -20,30 +20,34 @@ use rocket_contrib::templates::Template;
 use rocket_contrib::serve::StaticFiles;
 use rocket::response::Redirect;
 use rocket::request::Form;
+use std::str::FromStr;
+use rocket::request::FromFormValue;
+use std::ops::Deref;
 
 
 #[macro_use]
 extern crate rocket;
 
-pub struct Resolver {
+pub struct SafeHouse {
     house: Arc<House + Send + Sync>
 }
 
-impl Resolver {
-    fn get_house(&self) -> &House {
+impl Deref for SafeHouse{
+    type Target = House;
+
+    fn deref(&self) -> &<Self as Deref>::Target {
         self.house.as_ref()
     }
 }
 
 #[derive(FromForm)]
-struct NewStatus{
+struct NewStatus {
     status: String
 }
 
 #[post("/light", data = "<status>")]
-fn light(resolver: State<Resolver>, status: Form<NewStatus>) -> Redirect {
-    if let Some(status) = parse(status.into_inner().status) {
-        let house = resolver.get_house();
+fn light(house: State<SafeHouse>, status: Form<NewStatus>) -> Redirect {
+    if let Ok(status) = status.status.parse() {
         house.light(status);
     }
     Redirect::to("/")
@@ -51,7 +55,7 @@ fn light(resolver: State<Resolver>, status: Form<NewStatus>) -> Redirect {
 
 fn main() {
     let house = create_fake_house();
-    let resolver = Resolver {
+    let resolver = SafeHouse {
         house: Arc::new(house)
     };
     rocket::ignite()
@@ -59,12 +63,4 @@ fn main() {
         .manage(resolver)
         .mount("/", StaticFiles::from("static"))
         .mount("/api", routes![light]).launch();
-}
-
-fn parse(arg: String) -> Option<Status> {
-    match arg.as_str() {
-        "On" => Some(Status::On),
-        "Off" => Some(Status::Off),
-        _ => None
-    }
 }
