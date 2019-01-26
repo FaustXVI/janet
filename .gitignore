@@ -2,3 +2,6 @@
 target
 .idea
 nohup.out
+package-lock.json
+node_modules
+actions/node_modules

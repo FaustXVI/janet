@@ -8,6 +8,7 @@ with pkgs {};
 pkgs.stdenv.mkDerivation {
   name = "janet";
   buildInputs = [
+    pkgs.nodejs
     pkgs.arduino
     pkgs.rustup
     pkgs.fritzing
