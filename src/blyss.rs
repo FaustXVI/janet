@@ -68,8 +68,8 @@ mod should {
     macro_rules! one {
     ()=>{
         vec![
-        (HIGH, Duration::from_micros(400)),
-        (LOW, Duration::from_micros(800))
+        (LOW, Duration::from_micros(400)),
+        (HIGH, Duration::from_micros(800))
         ]
     }
     }

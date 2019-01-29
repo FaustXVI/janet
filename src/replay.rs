@@ -5,12 +5,18 @@ pub struct Replay<T: DigitalOutput> {
     output: T
 }
 
+pub trait Replayer {
+    fn play(&self, timings: &[u64]);
+}
+
 impl<T: DigitalOutput> Replay<T> {
     pub fn new(output: T) -> Self {
         Replay { output }
     }
+}
 
-    pub fn play(&self, timings: &[u64]) {
+impl<T: DigitalOutput> Replayer for Replay<T> {
+    fn play(&self, timings: &[u64]) {
         for (index, timing) in timings.iter().enumerate() {
             if index % 2 == 0 {
                 self.output.low_during(Duration::from_micros(*timing))
@@ -38,5 +44,27 @@ pub mod should {
         (HIGH, Duration::from_micros(23)),
         (LOW, Duration::from_micros(10)),
         ]));
+    }
+}
+
+#[cfg(test)]
+pub mod mock {
+    use super::*;
+    use std::cell::RefCell;
+
+    pub struct InMemoryReplayer {
+        pub timings: RefCell<Vec<u64>>
+    }
+
+    impl InMemoryReplayer {
+        pub fn new() -> Self {
+            InMemoryReplayer { timings: RefCell::new(vec![]) }
+        }
+    }
+
+    impl Replayer for InMemoryReplayer {
+        fn play(&self, timings: &[u64]) {
+            self.timings.borrow_mut().extend(timings);
+        }
     }
 }
