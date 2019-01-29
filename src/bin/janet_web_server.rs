@@ -11,6 +11,7 @@ use rocket_contrib::serve::StaticFiles;
 use rocket::response::Redirect;
 use rocket::request::Form;
 use std::ops::Deref;
+use janet::house::Room;
 
 
 #[macro_use]
@@ -36,7 +37,7 @@ struct NewStatus {
 #[post("/light", data = "<status>")]
 fn light(house: State<SafeHouse>, status: Form<NewStatus>) -> Redirect {
     if let Ok(status) = status.status.parse() {
-        house.light(status);
+        house.light(Room::LivingRoom ,status);
     }
     Redirect::to("/")
 }

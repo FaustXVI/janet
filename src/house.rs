@@ -10,6 +10,12 @@ pub struct MyHouse<T: Sender<Message=BlyssMessage>> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Room {
+    Kitchen,
+    LivingRoom,
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum LightStatus {
     ON,
     OFF,
@@ -37,7 +43,7 @@ impl FromStr for LightStatus {
 }
 
 pub trait House {
-    fn light(&self, status: LightStatus);
+    fn light(&self, room: Room, status: LightStatus);
 }
 
 impl<T: Sender<Message=BlyssMessage>> MyHouse<T> {
@@ -47,7 +53,7 @@ impl<T: Sender<Message=BlyssMessage>> MyHouse<T> {
 }
 
 impl<T: Sender<Message=BlyssMessage>> House for MyHouse<T> {
-    fn light(&self, status: LightStatus) {
+    fn light(&self, _room: Room, status: LightStatus) {
         let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, status.into());
         self.light.send(message);
     }
@@ -63,7 +69,7 @@ mod should {
     fn switch_on() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
         let house = MyHouse::new(sender);
-        house.light(LightStatus::ON);
+        house.light(Room::LivingRoom, LightStatus::ON);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
             BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On),
@@ -74,7 +80,7 @@ mod should {
     fn switch_off() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
         let house = MyHouse::new(sender);
-        house.light(LightStatus::OFF);
+        house.light(Room::LivingRoom, LightStatus::OFF);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
             BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::Off),
