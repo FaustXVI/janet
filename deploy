@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+ssh pi@janet "sudo systemctl stop janet.service" && \
+scp target/arm-unknown-linux-gnueabihf/release/janet_web_server pi@janet:~ && \
+scp -r static/ pi@janet:~ && \
+ssh pi@janet "sudo systemctl start janet.service"
+
