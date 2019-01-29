@@ -31,24 +31,47 @@
     </div>
 
 
-
-
-    <div class="row">
-        <div class="col-12">
-            <form action="/api/blinds" method="post" class="form-group">
-                <input type="hidden" name="room" value="Kitchen">
-                <input type="hidden" name="status" value="Up">
-                <input type="submit" value="Up" class="btn btn-lg btn-block btn-outline-dark">
-            </form>
+    <div>
+        <h1>Kitchen</h1>
+        <div class="row">
+            <div class="col-12">
+                <form action="/api/blinds" method="post" class="form-group">
+                    <input type="hidden" name="room" value="Kitchen">
+                    <input type="hidden" name="status" value="Up">
+                    <input type="submit" value="Up" class="btn btn-lg btn-block btn-outline-dark">
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <form action="/api/blinds" method="post" class="form-group">
+                    <input type="hidden" name="room" value="Kitchen">
+                    <input type="hidden" name="status" value="Down">
+                    <input type="submit" value="Down" class="btn btn-dark btn-lg btn-block">
+                </form>
+            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-12">
-            <form action="/api/blinds" method="post" class="form-group">
-                <input type="hidden" name="room" value="Kitchen">
-                <input type="hidden" name="status" value="Down">
-                <input type="submit" value="Down" class="btn btn-dark btn-lg btn-block">
-            </form>
+
+    <div>
+        <h1>Living room</h1>
+        <div class="row">
+            <div class="col-12">
+                <form action="/api/blinds" method="post" class="form-group">
+                    <input type="hidden" name="room" value="LivingRoom">
+                    <input type="hidden" name="status" value="Up">
+                    <input type="submit" value="Up" class="btn btn-lg btn-block btn-outline-dark">
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <form action="/api/blinds" method="post" class="form-group">
+                    <input type="hidden" name="room" value="LivingRoom">
+                    <input type="hidden" name="status" value="Down">
+                    <input type="submit" value="Down" class="btn btn-dark btn-lg btn-block">
+                </form>
+            </div>
         </div>
     </div>
 </div>
