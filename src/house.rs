@@ -81,6 +81,8 @@ pub trait House {
     fn blinds(&self, room: Room, status: BlindStatus);
     fn screen(&self, status: BlindStatus);
     fn cinema(&self);
+    fn goodmorning(&self);
+    fn goodnight(&self);
 }
 
 impl<T: Sender<Message=BlyssMessage>, R: Replayer> MyHouse<T, R> {
@@ -121,6 +123,26 @@ impl<T: Sender<Message=BlyssMessage>, R: Replayer> House for MyHouse<T, R> {
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
         sleep(Duration::from_secs(1));
         self.screen(BlindStatus::DOWN);
+    }
+
+    fn goodmorning(&self) {
+        self.light(Room::LivingRoom, LightStatus::OFF);
+        sleep(Duration::from_secs(1));
+        self.blinds(Room::LivingRoom, BlindStatus::UP);
+        sleep(Duration::from_secs(1));
+        self.blinds(Room::Kitchen, BlindStatus::UP);
+        sleep(Duration::from_secs(1));
+        self.screen(BlindStatus::UP);
+    }
+
+    fn goodnight(&self) {
+        self.light(Room::LivingRoom, LightStatus::OFF);
+        sleep(Duration::from_secs(1));
+        self.blinds(Room::LivingRoom, BlindStatus::DOWN);
+        sleep(Duration::from_secs(1));
+        self.blinds(Room::Kitchen, BlindStatus::DOWN);
+        sleep(Duration::from_secs(1));
+        self.screen(BlindStatus::UP);
     }
 }
 

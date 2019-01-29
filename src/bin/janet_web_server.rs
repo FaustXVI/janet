@@ -72,6 +72,8 @@ struct Mode {
 fn mode(house: State<SafeHouse>, mode: Form<Mode>) -> Redirect {
     match mode.mode.as_str() {
         "cinema" => house.cinema(),
+        "goodmorning" => house.goodmorning(),
+        "goodnight" => house.goodnight(),
         _ => {}
     };
     Redirect::to("/")
