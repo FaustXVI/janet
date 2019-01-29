@@ -27,8 +27,8 @@ pub mod mock {
 
     #[derive(Debug, Ord, PartialOrd, Eq, PartialEq,Copy, Clone)]
     pub enum PinState {
-        ON,
-        OFF,
+        HIGH,
+        LOW,
     }
 
     pub struct InMemoryPin {
@@ -45,11 +45,11 @@ pub mod mock {
 
     impl DigitalOutput for InMemoryPin {
         fn high_during(&self, duration: Duration) -> () {
-            self.states.borrow_mut().push((ON, duration));
+            self.states.borrow_mut().push((HIGH, duration));
         }
 
         fn low_during(&self, duration: Duration) -> () {
-            self.states.borrow_mut().push((OFF, duration));
+            self.states.borrow_mut().push((LOW, duration));
         }
     }
 }

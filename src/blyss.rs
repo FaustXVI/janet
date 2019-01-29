@@ -59,8 +59,8 @@ mod should {
     macro_rules! zero {
     ()=>{
         vec![
-        (OFF, Duration::from_micros(800)),
-        (ON, Duration::from_micros(400))
+        (LOW, Duration::from_micros(800)),
+        (HIGH, Duration::from_micros(400))
         ]
     }
     }
@@ -68,8 +68,8 @@ mod should {
     macro_rules! one {
     ()=>{
         vec![
-        (OFF, Duration::from_micros(400)),
-        (ON, Duration::from_micros(800))
+        (HIGH, Duration::from_micros(400)),
+        (LOW, Duration::from_micros(800))
         ]
     }
     }
@@ -80,7 +80,7 @@ mod should {
         signal_pin.header();
         let states = signal_pin.emitter.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
-        (ON, Duration::from_micros(2400)),
+        (HIGH, Duration::from_micros(2400)),
         ]));
     }
 
@@ -90,7 +90,7 @@ mod should {
         signal_pin.footer();
         let states = signal_pin.emitter.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
-        (OFF, Duration::from_micros(24000)),
+        (LOW, Duration::from_micros(24000)),
         ]));
     }
 
