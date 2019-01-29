@@ -91,6 +91,8 @@ impl<T: Sender<Message=BlyssMessage>, R: Replayer> MyHouse<T, R> {
     }
 }
 
+const INTER_MESSAGE_PAUSE: Duration = Duration::from_millis(100);
+
 impl<T: Sender<Message=BlyssMessage>, R: Replayer> House for MyHouse<T, R> {
     fn light(&self, _room: Room, status: LightStatus) {
         let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, status.into());
@@ -117,31 +119,31 @@ impl<T: Sender<Message=BlyssMessage>, R: Replayer> House for MyHouse<T, R> {
 
     fn cinema(&self) {
         self.light(Room::LivingRoom, LightStatus::OFF);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.blinds(Room::LivingRoom, BlindStatus::DOWN);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.screen(BlindStatus::DOWN);
     }
 
     fn goodmorning(&self) {
         self.light(Room::LivingRoom, LightStatus::OFF);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.blinds(Room::LivingRoom, BlindStatus::UP);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.blinds(Room::Kitchen, BlindStatus::UP);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.screen(BlindStatus::UP);
     }
 
     fn goodnight(&self) {
         self.light(Room::LivingRoom, LightStatus::OFF);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.blinds(Room::LivingRoom, BlindStatus::DOWN);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
-        sleep(Duration::from_secs(1));
+        sleep(INTER_MESSAGE_PAUSE);
         self.screen(BlindStatus::UP);
     }
 }
