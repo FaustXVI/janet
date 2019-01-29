@@ -55,6 +55,28 @@ fn blinds(house: State<SafeHouse>, status: Form<Order>) -> Redirect {
     Redirect::to("/")
 }
 
+#[post("/screen", data = "<status>")]
+fn screen(house: State<SafeHouse>, status: Form<NewStatus>) -> Redirect {
+    if let Ok(s) = status.status.parse() {
+        house.screen(s)
+    }
+    Redirect::to("/")
+}
+
+#[derive(FromForm)]
+struct Mode {
+    mode: String,
+}
+
+#[post("/mode", data = "<mode>")]
+fn mode(house: State<SafeHouse>, mode: Form<Mode>) -> Redirect {
+    match mode.mode.as_str() {
+        "cinema" => house.cinema(),
+        _ => {}
+    };
+    Redirect::to("/")
+}
+
 #[cfg(target_arch = "arm")]
 fn house() -> impl House {
     janet::raspberry::create_house()
@@ -74,5 +96,5 @@ fn main() {
         .attach(Template::fairing())
         .manage(resolver)
         .mount("/", StaticFiles::from("static"))
-        .mount("/api", routes![light,blinds]).launch();
+        .mount("/api", routes![light,blinds,mode,screen]).launch();
 }

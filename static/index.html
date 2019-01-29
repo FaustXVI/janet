@@ -13,6 +13,16 @@
         <img src="https://www.indiewire.com/wp-content/uploads/2018/10/NUP_183230_0177-e1538410951286.jpg?w=687"
         class="rounded mx-auto d-block"/>
     </div>
+
+    <div class="row">
+        <div class="col-12">
+            <form action="/api/mode" method="post" class="form-group">
+                <input type="hidden" name="mode" value="cinema">
+                <input type="submit" value="Cinema" class="btn btn-dark btn-lg btn-block">
+            </form>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <form action="/api/light" method="post" class="form-group">
@@ -68,6 +78,26 @@
             <div class="col-12">
                 <form action="/api/blinds" method="post" class="form-group">
                     <input type="hidden" name="room" value="LivingRoom">
+                    <input type="hidden" name="status" value="Down">
+                    <input type="submit" value="Down" class="btn btn-dark btn-lg btn-block">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <h1>Screen</h1>
+        <div class="row">
+            <div class="col-12">
+                <form action="/api/screen" method="post" class="form-group">
+                    <input type="hidden" name="status" value="Up">
+                    <input type="submit" value="Up" class="btn btn-lg btn-block btn-outline-dark">
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <form action="/api/screen" method="post" class="form-group">
                     <input type="hidden" name="status" value="Down">
                     <input type="submit" value="Down" class="btn btn-dark btn-lg btn-block">
                 </form>
