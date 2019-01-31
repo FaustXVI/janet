@@ -95,7 +95,7 @@ const INTER_MESSAGE_PAUSE: Duration = Duration::from_millis(100);
 
 impl<T: Sender<Message=BlyssMessage>, R: Replayer> House for MyHouse<T, R> {
     fn light(&self, _room: Room, status: LightStatus) {
-        let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, status.into());
+        let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel2, status.into());
         self.light.send(message);
     }
 
@@ -166,7 +166,7 @@ mod should {
         house.light(Room::LivingRoom, LightStatus::ON);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On),
+            BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel2, Status::On),
         ]));
     }
 
@@ -177,7 +177,7 @@ mod should {
         house.light(Room::LivingRoom, LightStatus::OFF);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::Off),
+            BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel2, Status::Off),
         ]));
     }
 

@@ -45,7 +45,7 @@ impl BlyssMessage {
     */
     pub fn new(address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
         BlyssMessage {
-            timestamp: 0x6D,
+            timestamp: status as u8,
             brand: 0xFE,
             rolling_code: 0x98,
             address,
@@ -111,7 +111,7 @@ mod should {
             Sent::DATA(0x08, least_significant_bits.clone()),
             Sent::DATA(0x00, least_significant_bits.clone()),
             Sent::DATA(0x98, full_byte.clone()),
-            Sent::DATA(0x6D, full_byte.clone()),
+            Sent::DATA(0x00, full_byte.clone()),
             Sent::DATA(0x00, least_significant_bits.clone()),
             Sent::FOOTER,
         ]);
