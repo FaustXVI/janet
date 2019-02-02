@@ -12,7 +12,7 @@ pkgs.stdenv.mkDerivation {
     pkgs.arduino
     pkgs.rustup
     pkgs.fritzing
-    ((pkgs.rustChannelOf { date = null; channel = "nightly"; }).rust.override {
+    ((pkgs.rustChannelOf { date = "2019-01-31"; channel = "nightly"; }).rust.override {
       extensions = ["rust-src"];
       targets = [ "x86_64-unknown-linux-gnu" "arm-unknown-linux-gnueabihf" ];
     })
