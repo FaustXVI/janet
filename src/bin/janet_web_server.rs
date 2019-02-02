@@ -9,8 +9,8 @@ use rocket_contrib::templates::Template;
 use rocket_contrib::serve::StaticFiles;
 use rocket::response::Redirect;
 use rocket::request::Form;
-use std::ops::Deref;
 use janet::house::Room;
+use std::thread;
 
 
 #[macro_use]
@@ -20,11 +20,12 @@ pub struct SafeHouse {
     house: Arc<House + Send + Sync>
 }
 
-impl Deref for SafeHouse {
-    type Target = House;
-
-    fn deref(&self) -> &<Self as Deref>::Target {
-        self.house.as_ref()
+impl SafeHouse {
+    fn execute<F>(&self, f: F) where F: FnOnce(Arc<House>) + Send + 'static {
+        let h = self.house.clone();
+        thread::spawn(move || {
+            f(h);
+        });
     }
 }
 
@@ -36,7 +37,9 @@ struct NewStatus {
 #[post("/light", data = "<status>")]
 fn light(house: State<SafeHouse>, status: Form<NewStatus>) -> Redirect {
     if let Ok(status) = status.status.parse() {
-        house.light(Room::LivingRoom, status);
+        house.execute(move |h| {
+            h.light(Room::LivingRoom, status);
+        })
     }
     Redirect::to("/")
 }
@@ -50,7 +53,9 @@ struct Order {
 #[post("/blinds", data = "<status>")]
 fn blinds(house: State<SafeHouse>, status: Form<Order>) -> Redirect {
     if let (Ok(room), Ok(status)) = (status.room.parse(), status.status.parse()) {
-        house.blinds(room, status);
+        house.execute(move |h| {
+            h.blinds(room, status);
+        });
     }
     Redirect::to("/")
 }
@@ -58,7 +63,9 @@ fn blinds(house: State<SafeHouse>, status: Form<Order>) -> Redirect {
 #[post("/screen", data = "<status>")]
 fn screen(house: State<SafeHouse>, status: Form<NewStatus>) -> Redirect {
     if let Ok(s) = status.status.parse() {
-        house.screen(s)
+        house.execute(move |h| {
+            h.screen(s);
+        });
     }
     Redirect::to("/")
 }
@@ -71,9 +78,9 @@ struct Mode {
 #[post("/mode", data = "<mode>")]
 fn mode(house: State<SafeHouse>, mode: Form<Mode>) -> Redirect {
     match mode.mode.as_str() {
-        "cinema" => house.cinema(),
-        "goodmorning" => house.goodmorning(),
-        "goodnight" => house.goodnight(),
+        "cinema" => house.execute(|h| h.cinema()),
+        "goodmorning" => house.execute(|h| h.goodmorning()),
+        "goodnight" => house.execute(|h| h.goodnight()),
         _ => {}
     };
     Redirect::to("/")
