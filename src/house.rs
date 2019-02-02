@@ -102,7 +102,7 @@ impl<T: Sender<Message=BlyssMessage>, R: Replayer> House for MyHouse<T, R> {
             (Room::Kitchen, BlindStatus::DOWN) => vec![10663, 279, 2784, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279],
             (Room::Kitchen, BlindStatus::UP) => vec![10659, 279, 2781, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279],
         };
-        for _ in 0..10 {
+        for _ in 0..30 {
             self.replayer.play(&message)
         }
     }
@@ -184,7 +184,7 @@ mod should {
             let house = MyHouse::new(InMemorySender::new(), replayer);
             house.blinds(room, status);
             let messages = house.replayer.timings.into_inner();
-            assert_that!(&messages, contains_in_order(repeat(message,10)));
+            assert_that!(&messages, contains_subset(message));
         }
     }
 
@@ -202,7 +202,7 @@ mod should {
             let house = MyHouse::new(InMemorySender::new(), replayer);
             house.screen(status);
             let messages = house.replayer.timings.into_inner();
-            assert_that!(&messages, contains_in_order(repeat(message,10)));
+            assert_that!(&messages, contains_subset(message));
         }
     }
 
@@ -239,7 +239,4 @@ mod should {
         assert_eq!("plop".parse::<Room>().is_err(), true);
     }
 
-    fn repeat(v: Vec<u64>, n: usize) -> Vec<u64> {
-        vec![v].into_iter().cycle().take(n).flatten().collect::<Vec<u64>>()
-    }
 }
