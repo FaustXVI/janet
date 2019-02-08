@@ -5,10 +5,39 @@ use crate::blyss_sender::Channel;
 use crate::blyss_sender::SubChannel;
 use std::str::FromStr;
 use crate::replay::Replayer;
+use std::sync::Mutex;
+use std::cell::RefCell;
 
-pub struct MyHouse<T: Sender<Message=BlyssMessage>, R: Replayer> {
+pub struct MyHouse<T, R, G>
+    where T: Sender<Message=BlyssMessage>,
+          R: Replayer,
+          G: Generator
+{
     light: T,
     replayer: R,
+    generator: G,
+}
+
+pub trait Generator {
+    fn gen(&self) -> (u8, u8);
+}
+
+pub struct CycleGenerator {
+    iterator: Box<Mutex<RefCell<Iterator<Item=(u8, u8)> + Send>>>
+}
+
+
+impl CycleGenerator {
+    pub fn new<Iter>(iterator: Iter) -> Self
+        where Iter: Iterator<Item=(u8, u8)> + 'static + Send + Clone {
+        CycleGenerator { iterator: Box::new(Mutex::new(RefCell::new(iterator.cycle()))) }
+    }
+}
+
+impl Generator for CycleGenerator {
+    fn gen(&self) -> (u8, u8) {
+        self.iterator.lock().unwrap().borrow_mut().next().unwrap()
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -83,15 +112,22 @@ pub trait House {
     fn goodnight(&self);
 }
 
-impl<T: Sender<Message=BlyssMessage>, R: Replayer> MyHouse<T, R> {
-    pub fn new(light: T, replayer: R) -> Self {
-        MyHouse { light, replayer }
+impl<T, R, G> MyHouse<T, R, G>
+    where T: Sender<Message=BlyssMessage>,
+          R: Replayer,
+          G: Generator {
+    pub fn new(light: T, replayer: R, generator: G) -> Self {
+        MyHouse { light, replayer, generator }
     }
 }
 
-impl<T: Sender<Message=BlyssMessage>, R: Replayer> House for MyHouse<T, R> {
+impl<T, R, G> House for MyHouse<T, R, G>
+    where T: Sender<Message=BlyssMessage>,
+          R: Replayer,
+          G: Generator {
     fn light(&self, _room: Room, status: LightStatus) {
-        let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel2, status.into());
+        let (timestamp, rolling_code) = self.generator.gen();
+        let message = BlyssMessage::new(timestamp,rolling_code,0x7057, Channel::ChannelC, SubChannel::Channel2, status.into());
         self.light.send(message);
     }
 
@@ -153,22 +189,24 @@ mod should {
     #[test]
     fn switch_on() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
-        let house = MyHouse::new(sender, InMemoryReplayer::new());
+        let iter = (0..=1_u8).zip(2..3_u8);
+        let house = MyHouse::new(sender, InMemoryReplayer::new(), CycleGenerator::new(iter));
         house.light(Room::LivingRoom, LightStatus::ON);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel2, Status::On),
+            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel2, Status::On),
         ]));
     }
 
     #[test]
     fn switch_off() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
-        let house = MyHouse::new(sender, InMemoryReplayer::new());
+        let iter = (0..=1_u8).zip(2..3_u8);
+        let house = MyHouse::new(sender, InMemoryReplayer::new(), CycleGenerator::new(iter));
         house.light(Room::LivingRoom, LightStatus::OFF);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel2, Status::Off),
+            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel2, Status::Off),
         ]));
     }
 
@@ -181,7 +219,8 @@ mod should {
             (Room::Kitchen, BlindStatus::UP, vec![10659, 279, 2781, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 1354, 279, 279, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279, 279, 279, 1354, 279]),
         ] {
             let replayer = InMemoryReplayer::new();
-            let house = MyHouse::new(InMemorySender::new(), replayer);
+            let iter = (0..=1_u8).zip(2..3_u8);
+            let house = MyHouse::new(InMemorySender::new(), replayer, CycleGenerator::new(iter));
             house.blinds(room, status);
             let messages = house.replayer.timings.into_inner();
             assert_that!(&messages, contains_subset(message));
@@ -199,7 +238,8 @@ mod should {
                                    8883, 4764, 1537, 313, 744, 313, 744, 313, 744, 313, 744, 313, 744, 643, 442, 643, 442, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 313, 744, 313, 744, 643, 442, 643, 442, 643, 442, 313, 744, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643]),
         ] {
             let replayer = InMemoryReplayer::new();
-            let house = MyHouse::new(InMemorySender::new(), replayer);
+            let iter = (0..=1_u8).zip(2..3_u8);
+            let house = MyHouse::new(InMemorySender::new(), replayer, CycleGenerator::new(iter));
             house.screen(status);
             let messages = house.replayer.timings.into_inner();
             assert_that!(&messages, contains_subset(message));
@@ -238,5 +278,4 @@ mod should {
         }
         assert_eq!("plop".parse::<Room>().is_err(), true);
     }
-
 }

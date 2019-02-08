@@ -38,16 +38,15 @@ pub struct BlyssMessage {
 }
 
 impl BlyssMessage {
-    /*
-    const byte RF_ROLLING_CODE[] = {
-        0x98, 0xDA, 0x1E, 0xE6, 0x67
-    };
-    */
-    pub fn new(address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
+    pub fn rolling_codes() -> impl Iterator<Item=(u8, u8)> + Clone {
+        (0..=0xFF).cycle().zip(vec![0x98, 0xDA, 0x1E, 0xE6, 0x67].into_iter().cycle())
+    }
+
+    pub fn new(timestamp: u8, rolling_code: u8, address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
         BlyssMessage {
-            timestamp: status as u8,
+            timestamp,
             brand: 0xFE,
-            rolling_code: 0x98,
+            rolling_code,
             address,
             channel,
             sub_channel,
@@ -62,7 +61,7 @@ pub struct MessageSender<T: RadioEmitter> {
 
 impl<T: RadioEmitter> MessageSender<T> {
     pub fn new(radio: T) -> Self {
-        MessageSender { radio}
+        MessageSender { radio }
     }
 }
 
@@ -95,9 +94,19 @@ mod should {
     use crate::radio_emitter::mock::Sent;
 
     #[test]
+    fn generate_rolling_code() {
+        let generated= BlyssMessage::rolling_codes()
+            .take(6)
+            .collect::<Vec<_>>();
+        assert_that!(&generated,contains_in_order(
+        vec![(0,0x98), (1,0xDA), (2,0x1E), (3,0xE6), (4,0x67),(5,0x98)]
+        ))
+    }
+
+    #[test]
     fn send_data() {
         let emitter = MessageSender::new(InMemoryRadioEmitter::new());
-        let message = BlyssMessage::new(0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On);
+        let message = BlyssMessage::new(0x12, 0x34, 0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On);
         emitter.send(message);
         let sent = emitter.radio.states.into_inner();
         let full_byte: Vec<u8> = Order::LittleEndian.into_iter().collect();
@@ -110,8 +119,8 @@ mod should {
             Sent::DATA(0x57, full_byte.clone()),
             Sent::DATA(0x08, least_significant_bits.clone()),
             Sent::DATA(0x00, least_significant_bits.clone()),
-            Sent::DATA(0x98, full_byte.clone()),
-            Sent::DATA(0x00, full_byte.clone()),
+            Sent::DATA(0x34, full_byte.clone()),
+            Sent::DATA(0x12, full_byte.clone()),
             Sent::DATA(0x00, least_significant_bits.clone()),
             Sent::FOOTER,
         ]);
@@ -122,5 +131,4 @@ mod should {
         vec![sent].iter().cycle().take(13).flat_map(|t| t.iter())
             .map(|t| t.to_owned()).collect()
     }
-
 }
