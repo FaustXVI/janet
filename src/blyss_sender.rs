@@ -39,7 +39,7 @@ pub struct BlyssMessage {
 
 impl BlyssMessage {
     pub fn rolling_codes() -> impl Iterator<Item=(u8, u8)> + Clone {
-        (0..=0xFF).cycle().zip(vec![0x98, 0xDA, 0x1E, 0xE6, 0x67].into_iter().cycle())
+        (0..=0xFF).step_by(10).cycle().zip(vec![0x98, 0xDA, 0x1E, 0xE6, 0x67].into_iter().cycle())
     }
 
     pub fn new(timestamp: u8, rolling_code: u8, address: u16, channel: Channel, sub_channel: SubChannel, status: Status) -> Self {
@@ -99,7 +99,7 @@ mod should {
             .take(6)
             .collect::<Vec<_>>();
         assert_that!(&generated,contains_in_order(
-        vec![(0,0x98), (1,0xDA), (2,0x1E), (3,0xE6), (4,0x67),(5,0x98)]
+        vec![(0,0x98), (10,0xDA), (20,0x1E), (30,0xE6), (40,0x67),(50,0x98)]
         ))
     }
 
