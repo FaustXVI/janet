@@ -7,14 +7,17 @@ pub trait DigitalOutput {
     fn low_during(&self, duration: Duration) -> ();
 }
 
+const LOW: u8 = 0;
+const HIGH: u8 = 1;
+
 impl DigitalOutput for Pin {
     fn high_during(&self, duration: Duration) -> () {
-        self.set_value(1).unwrap();
+        self.set_value(HIGH).unwrap();
         sleep(duration);
     }
 
     fn low_during(&self, duration: Duration) -> () {
-        self.set_value(0).unwrap();
+        self.set_value(LOW).unwrap();
         sleep(duration);
     }
 }
@@ -23,9 +26,8 @@ impl DigitalOutput for Pin {
 pub mod mock {
     use super::*;
     use std::cell::RefCell;
-    use crate::pin::mock::PinState::*;
 
-    #[derive(Debug, Ord, PartialOrd, Eq, PartialEq,Copy, Clone)]
+    #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
     pub enum PinState {
         HIGH,
         LOW,
@@ -45,11 +47,11 @@ pub mod mock {
 
     impl DigitalOutput for InMemoryPin {
         fn high_during(&self, duration: Duration) -> () {
-            self.states.borrow_mut().push((HIGH, duration));
+            self.states.borrow_mut().push((PinState::HIGH, duration));
         }
 
         fn low_during(&self, duration: Duration) -> () {
-            self.states.borrow_mut().push((LOW, duration));
+            self.states.borrow_mut().push((PinState::LOW, duration));
         }
     }
 }
