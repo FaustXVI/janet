@@ -24,6 +24,7 @@ impl<T: DigitalOutput> Replayer for Replay<T> {
                 self.output.high_during(Duration::from_micros(*timing))
             }
         }
+        self.output.low_during(Duration::from_millis(2))
     }
 }
 
@@ -43,6 +44,7 @@ pub mod should {
         (LOW, Duration::from_micros(500)),
         (HIGH, Duration::from_micros(23)),
         (LOW, Duration::from_micros(10)),
+        (LOW, Duration::from_millis(2)),
         ]));
     }
 }
