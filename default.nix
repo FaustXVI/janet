@@ -8,6 +8,7 @@ with pkgs {};
 pkgs.stdenv.mkDerivation {
   name = "janet";
   buildInputs = [
+    pkgs.ghc
     pkgs.nodejs
     pkgs.arduino
     pkgs.rustup
