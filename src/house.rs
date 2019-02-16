@@ -133,7 +133,7 @@ impl<T, R, G> House for MyHouse<T, R, G>
           G: Generator {
     fn light(&self, _room: Room, status: LightStatus) {
         let (timestamp, rolling_code) = self.generator.gen();
-        let message = BlyssMessage::new(timestamp, rolling_code, 0x7057, Channel::ChannelC, SubChannel::Channel2, status.into());
+        let message = BlyssMessage::new(timestamp, rolling_code, 0x7057, Channel::ChannelC, SubChannel::Channel1, status.into());
         self.light.send(message);
     }
 
@@ -194,26 +194,26 @@ mod should {
     use crate::replay::mock::*;
 
     #[test]
-    fn switch_on() {
+    fn switch_on_living_room() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
         let iter = (0..=1_u8).zip(2..3_u8);
         let house = MyHouse::new(sender, InMemoryReplayer::new(), CycleGenerator::new(iter));
         house.light(Room::LivingRoom, LightStatus::ON);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel2, Status::On),
+            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On),
         ]));
     }
 
     #[test]
-    fn switch_off() {
+    fn switch_off_living_room() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
         let iter = (0..=1_u8).zip(2..3_u8);
         let house = MyHouse::new(sender, InMemoryReplayer::new(), CycleGenerator::new(iter));
         house.light(Room::LivingRoom, LightStatus::OFF);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel2, Status::Off),
+            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel1, Status::Off),
         ]));
     }
 
