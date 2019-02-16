@@ -6,6 +6,7 @@ extern crate galvanic_assert;
 
 pub mod pin;
 pub mod radio_emitter;
+pub mod radio_protocol;
 pub mod blyss_sender;
 pub mod sender;
 pub mod blyss;
