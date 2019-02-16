@@ -17,10 +17,10 @@ impl Message for Status {
 lazy_static! {
     pub static ref DOOYA_PROTOCOL: RadioProtocol<Status> = {
         RadioProtocol::<Status>::new(
-            Header(vec![283, 2793]),
-            Footer(vec![283, 10740]),
-            Zero(vec![283, 283, 283, 1355]),
-            One(vec![283, 1355, 283, 283]))
+            Header(vec![4764, 1537]),
+            Footer(vec![0,8883]),
+            Zero(vec![313, 744]),
+            One(vec![643, 442]))
     };
 }
 
