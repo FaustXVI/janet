@@ -17,14 +17,15 @@ impl<T: DigitalOutput> Replay<T> {
 
 impl<T: DigitalOutput> Replayer for Replay<T> {
     fn play(&self, timings: &[u64]) {
-        for (index, timing) in timings.iter().enumerate() {
-            if index % 2 == 0 {
-                self.output.low_during(Duration::from_micros(*timing))
-            } else {
-                self.output.high_during(Duration::from_micros(*timing))
+        if timings.len() % 2 == 0 {
+            for (index, timing) in timings.iter().enumerate() {
+                if index % 2 == 0 {
+                    self.output.high_during(Duration::from_micros(*timing))
+                } else {
+                    self.output.low_during(Duration::from_micros(*timing))
+                }
             }
         }
-        self.output.low_during(Duration::from_millis(2))
     }
 }
 
@@ -36,16 +37,24 @@ pub mod should {
     use crate::pin::mock::PinState::*;
 
     #[test]
-    fn replay_a_saved_code() {
+    fn replay_timings() {
+        let replay = Replay::new(InMemoryPin::new());
+        replay.play(&vec![500, 23, 10, 20]);
+        let states = replay.output.states.into_inner();
+        assert_that!(&states, contains_in_order(vec![
+        (HIGH, Duration::from_micros(500)),
+        (LOW, Duration::from_micros(23)),
+        (HIGH, Duration::from_micros(10)),
+        (LOW, Duration::from_micros(20)),
+        ]));
+    }
+
+    #[test]
+    fn ignore_malformed_data() {
         let replay = Replay::new(InMemoryPin::new());
         replay.play(&vec![500, 23, 10]);
         let states = replay.output.states.into_inner();
-        assert_that!(&states, contains_in_order(vec![
-        (LOW, Duration::from_micros(500)),
-        (HIGH, Duration::from_micros(23)),
-        (LOW, Duration::from_micros(10)),
-        (LOW, Duration::from_millis(2)),
-        ]));
+        assert_that!(&states, contains_in_order(vec![]));
     }
 }
 

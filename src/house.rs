@@ -150,8 +150,7 @@ impl<T, R, G> House for MyHouse<T, R, G>
         let repeated: Vec<_> = iter::repeat(DIO_PROTOCOL.timings_for(message)).take(10)
             .flat_map(|t| t.into_iter())
             .collect();
-        let l = [vec![0], repeated].concat();
-        self.replayer.play(&l)
+        self.replayer.play(&repeated)
     }
 
     fn screen(&self, status: BlindStatus) {
@@ -159,11 +158,10 @@ impl<T, R, G> House for MyHouse<T, R, G>
             BlindStatus::DOWN => DOOYA_PROTOCOL.timings_for(dooya::Status::DOWN) ,
             BlindStatus::UP => DOOYA_PROTOCOL.timings_for(dooya::Status::UP),
         };
-        let repeated: Vec<_> = iter::repeat(message).take(10)
+        let repeated: Vec<_> = iter::repeat(message).take(15)
             .flat_map(|t| t.into_iter())
             .collect();
-        let l = [vec![0], repeated].concat();
-        self.replayer.play(&l)
+        self.replayer.play(&repeated)
     }
 
     fn cinema(&self) {
@@ -231,7 +229,7 @@ mod should {
             let iter = (0..=1_u8).zip(2..3_u8);
             let house = MyHouse::new(InMemorySender::new(), replayer, CycleGenerator::new(iter));
             house.blinds(room, status);
-            let messages = house.replayer.timings.into_inner()[1..].to_vec();
+            let messages = house.replayer.timings.into_inner();
             let repeated: Vec<_> = iter::repeat(message).take(10)
                 .flat_map(|t| t.into_iter())
                 .collect();
@@ -249,8 +247,8 @@ mod should {
             let iter = (0..=1_u8).zip(2..3_u8);
             let house = MyHouse::new(InMemorySender::new(), replayer, CycleGenerator::new(iter));
             house.screen(status);
-            let messages = house.replayer.timings.into_inner()[1..].to_vec();
-            let repeated: Vec<_> = iter::repeat(message).take(10)
+            let messages = house.replayer.timings.into_inner();
+            let repeated: Vec<_> = iter::repeat(message).take(15)
                 .flat_map(|t| t.into_iter())
                 .collect();
             assert_that!(&messages, contains_in_order(repeated));
