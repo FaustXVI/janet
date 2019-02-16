@@ -136,16 +136,19 @@ impl<T, R, G> House for MyHouse<T, R, G>
     }
 
     fn blinds(&self, room: Room, status: BlindStatus) {
-        let message = match (room, status) {
-            (Room::LivingRoom, BlindStatus::DOWN) => DioMessage::new(0x0932,dio::Status::DOWN),
-            (Room::LivingRoom, BlindStatus::UP) => DioMessage::new(0x0932,dio::Status::UP),
-            (Room::Kitchen, BlindStatus::DOWN) => DioMessage::new(0x2600,dio::Status::DOWN),
-            (Room::Kitchen, BlindStatus::UP) => DioMessage::new(0x2600,dio::Status::UP),
+        let a = match room {
+            Room::LivingRoom => 0x0932,
+            Room::Kitchen => 0x2600
         };
+        let s = match status {
+            BlindStatus::DOWN => dio::Status::DOWN,
+            BlindStatus::UP => dio::Status::UP
+        };
+        let message = DioMessage::new(a, s);
         let repeated: Vec<_> = iter::repeat(DIO_PROTOCOL.timings_for(message)).take(10)
             .flat_map(|t| t.into_iter())
             .collect();
-        let l = [vec![0],repeated].concat();
+        let l = [vec![0], repeated].concat();
         self.replayer.play(&l)
     }
 
