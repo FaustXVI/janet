@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 extern crate sysfs_gpio;
 
 #[cfg(test)]
@@ -13,3 +16,4 @@ pub mod blyss;
 pub mod house;
 pub mod raspberry;
 pub mod replay;
+pub mod dio;
