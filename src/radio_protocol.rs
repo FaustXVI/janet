@@ -71,21 +71,10 @@ mod should {
     use super::*;
     use galvanic_assert::matchers::collection::*;
 
-    struct FakeMessage(pub Vec<u8>);
-
-    impl IntoIterator for FakeMessage {
-        type Item = u8;
-        type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
-
-        fn into_iter(self) -> Self::IntoIter {
-            self.0.into_iter()
-        }
-    }
-
     #[test]
     fn send_byte() {
         let protocol = RadioProtocol::new(Header(vec![13]), Footer(vec![37]), Zero(vec![0]), One(vec![1]));
-        let timings = protocol.timings_for(FakeMessage(vec![5]));
+        let timings = protocol.timings_for(vec![5]);
         assert_that!(&timings, contains_in_order(vec![13,0,0,0,0,0,1,0,1,37]));
     }
 
@@ -94,7 +83,7 @@ mod should {
         let z = 10;
         let o = 11;
         let protocol = RadioProtocol::new(Header(vec![4, 2]), Footer(vec![13, 37]), Zero(vec![z]), One(vec![o]));
-        let timings = protocol.timings_for(FakeMessage(vec![3, 7]));
+        let timings = protocol.timings_for(vec![3, 7]);
         assert_that!(&timings, contains_in_order(vec![4,2,z,z,z,z,z,z,o,o,z,z,z,z,z,o,o,o,13,37]));
     }
 }
