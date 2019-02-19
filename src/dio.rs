@@ -26,9 +26,12 @@ impl DioMessage {
     }
 }
 
-impl Message for DioMessage {
-    fn as_iter(&self) -> Box<Iterator<Item=u8>> {
-        Box::new(vec![self.brand, ((self.address & 0xFF00) >> 8) as u8, (self.address & 0xFF) as u8, self.status].into_iter())
+impl IntoIterator for DioMessage{
+    type Item = u8;
+    type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        vec![self.brand, ((self.address & 0xFF00) >> 8) as u8, (self.address & 0xFF) as u8, self.status].into_iter()
     }
 }
 
@@ -51,14 +54,14 @@ mod should {
     #[test]
     fn transforms_to_bytes_down() {
         let m = DioMessage::new(0x1234, Status::DOWN);
-        let bytes = m.as_iter().collect::<Vec<u8>>();
+        let bytes = m.into_iter().collect::<Vec<u8>>();
         assert_that!(&bytes, contains_in_order(vec![0x27,0x12,0x34,0x90]));
     }
 
     #[test]
     fn transforms_to_bytes_up() {
         let m = DioMessage::new(0x1234, Status::UP);
-        let bytes = m.as_iter().collect::<Vec<u8>>();
+        let bytes = m.into_iter().collect::<Vec<u8>>();
         assert_that!(&bytes, contains_in_order(vec![0x27,0x12,0x34,0x80]));
     }
 }

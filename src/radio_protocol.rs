@@ -1,8 +1,5 @@
 use std::marker::PhantomData;
-
-pub trait Message {
-    fn as_iter(&self) -> Box<Iterator<Item=u8>>;
-}
+use std::time::Duration;
 
 pub struct Header(pub Vec<u64>);
 
@@ -47,11 +44,11 @@ impl Byte {
 }
 
 
-impl<T: Message> RadioProtocol<T> {
+impl<T: IntoIterator<Item=u8>> RadioProtocol<T> {
     pub fn timings_for(&self, message: T) -> Timings {
         let mut r = vec![];
         r.push(self.header.clone());
-        r.append(&mut message.as_iter()
+        r.append(&mut message.into_iter()
             .map(|b| self.timings_for_byte(Byte(b)))
             .collect());
         r.push(self.footer.clone());
@@ -76,9 +73,12 @@ mod should {
 
     struct FakeMessage(pub Vec<u8>);
 
-    impl Message for FakeMessage {
-        fn as_iter(&self) -> Box<Iterator<Item=u8>> {
-            Box::new(self.0.clone().into_iter())
+    impl IntoIterator for FakeMessage {
+        type Item = u8;
+        type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
+
+        fn into_iter(self) -> Self::IntoIter {
+            self.0.into_iter()
         }
     }
 

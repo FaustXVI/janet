@@ -5,11 +5,14 @@ pub enum Status {
     DOWN,
 }
 
-impl Message for Status {
-    fn as_iter(&self) -> Box<Iterator<Item=u8>> {
+impl IntoIterator for Status {
+    type Item = u8;
+    type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
         match self {
-            Status::DOWN => Box::new(vec![0x06, 0x41, 0xdf, 0xd1, 0x33].into_iter()),
-            Status::UP => Box::new(vec![0x06, 0x41, 0xdf, 0xd1, 0x11].into_iter()),
+            Status::DOWN => vec![0x06, 0x41, 0xdf, 0xd1, 0x33].into_iter(),
+            Status::UP => vec![0x06, 0x41, 0xdf, 0xd1, 0x11].into_iter(),
         }
     }
 }
@@ -33,14 +36,14 @@ mod should {
     #[test]
     fn transforms_to_bytes_down() {
         let m = Status::DOWN;
-        let bytes = m.as_iter().collect::<Vec<u8>>();
+        let bytes = m.into_iter().collect::<Vec<u8>>();
         assert_that!(&bytes, contains_in_order(vec![0x06,0x41,0xdf,0xd1,0x33]));
     }
 
     #[test]
     fn transforms_to_bytes_up() {
         let m = Status::UP;
-        let bytes = m.as_iter().collect::<Vec<u8>>();
+        let bytes = m.into_iter().collect::<Vec<u8>>();
         assert_that!(&bytes, contains_in_order(vec![0x06,0x41,0xdf,0xd1,0x11]));
     }
 }
