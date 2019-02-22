@@ -131,9 +131,13 @@ impl<T, R, G> House for MyHouse<T, R, G>
           R: Radio,
           G: Generator {
     fn light(&self, _room: Room, status: LightStatus) {
-        let (timestamp, rolling_code) = self.generator.gen();
-        let message = BlyssMessage::new(timestamp, rolling_code, 0x7057, Channel::ChannelC, SubChannel::Channel1, status.into());
-        self.light.send(message);
+        let a = 0x1337;
+        let s = match status {
+            LightStatus::ON=> dio::Status::ON,
+            LightStatus::OFF => dio::Status::OFF
+        };
+        let message = DioMessage::new(a, s);
+        self.radio.send(message, &DIO_PROTOCOL);
     }
 
     fn blinds(&self, room: Room, status: BlindStatus) {
@@ -189,27 +193,18 @@ mod should {
     use crate::radio::mock::InMemoryRadio;
 
     #[test]
-    fn switch_on_living_room() {
-        let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
-        let iter = (0..=1_u8).zip(2..3_u8);
-        let house = MyHouse::new(sender, InMemoryPin::new(), CycleGenerator::new(iter));
-        house.light(Room::LivingRoom, LightStatus::ON);
-        let messages = house.light.messages.into_inner();
-        assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel1, Status::On),
-        ]));
-    }
-
-    #[test]
-    fn switch_off_living_room() {
-        let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
-        let iter = (0..=1_u8).zip(2..3_u8);
-        let house = MyHouse::new(sender, InMemoryPin::new(), CycleGenerator::new(iter));
-        house.light(Room::LivingRoom, LightStatus::OFF);
-        let messages = house.light.messages.into_inner();
-        assert_that!(&messages, contains_in_order(vec![
-            BlyssMessage::new(0,2,0x7057, Channel::ChannelC, SubChannel::Channel1, Status::Off),
-        ]));
+    fn lights() {
+        for (room, status, message) in vec![
+            (Room::LivingRoom, LightStatus::ON, DioMessage::new(0x1337, dio::Status::ON)),
+            (Room::LivingRoom, LightStatus::OFF, DioMessage::new(0x1337, dio::Status::OFF)),
+        ] {
+            let radio = InMemoryRadio::new();
+            let iter = (0..=1_u8).zip(2..3_u8);
+            let house = MyHouse::new(InMemorySender::new(), radio, CycleGenerator::new(iter));
+            house.light(room, status);
+            let received = house.radio.received(message, &DIO_PROTOCOL);
+            assert_that!(&received, eq(true));
+        }
     }
 
     #[test]
