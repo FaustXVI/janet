@@ -23,10 +23,10 @@ lazy_static! {
     pub static ref DOOYA_PROTOCOL: RadioProtocol<Status> = {
         RadioProtocol::<Status>::new(
             Header(vec![Signal::HIGH(Duration::from_micros(4764)), Signal::LOW(Duration::from_micros(1537))]),
-            Footer(vec![Signal::HIGH(Duration::from_micros(0)),Signal::LOW(Duration::from_micros(8883))]),
+            Footer(vec![Signal::LOW(Duration::from_micros(8583))]),
             Zero(vec![Signal::HIGH(Duration::from_micros(313)), Signal::LOW(Duration::from_micros(744))]),
             One(vec![Signal::HIGH(Duration::from_micros(643)), Signal::LOW(Duration::from_micros(442))]),
-            20)
+            30)
     };
 }
 
