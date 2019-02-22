@@ -17,7 +17,9 @@ const closestIn = array => value => {
 
 const normalize = array => {
     let norms = [];
-    for (let value of array) {
+    let a = [...array];
+    a.sort();
+    for (let value of a) {
         let i = 0;
         let values;
         do {
@@ -26,7 +28,7 @@ const normalize = array => {
             }
             values = norms[i];
             i++;
-        } while (!(values.length === 0 || Math.abs(average(values) - value) < value * 0.5));
+        } while (!(values.length === 0 || Math.abs(average(values) - value) < value * 0.05));
 
         values.push(value);
     }
