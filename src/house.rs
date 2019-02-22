@@ -117,24 +117,24 @@ impl<R> House for MyHouse<R>
     }
 
     fn cinema(&self) {
-        self.light(Room::LivingRoom, LightStatus::OFF);
         self.blinds(Room::LivingRoom, BlindStatus::DOWN);
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
         self.screen(BlindStatus::DOWN);
+        self.light(Room::LivingRoom, LightStatus::OFF);
     }
 
     fn goodmorning(&self) {
-        self.light(Room::LivingRoom, LightStatus::OFF);
         self.blinds(Room::LivingRoom, BlindStatus::UP);
         self.blinds(Room::Kitchen, BlindStatus::UP);
         self.screen(BlindStatus::UP);
+        self.light(Room::LivingRoom, LightStatus::OFF);
     }
 
     fn goodnight(&self) {
-        self.light(Room::LivingRoom, LightStatus::OFF);
         self.blinds(Room::LivingRoom, BlindStatus::DOWN);
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
         self.screen(BlindStatus::UP);
+        self.light(Room::LivingRoom, LightStatus::OFF);
     }
 }
 
