@@ -1,4 +1,6 @@
 use crate::radio_protocol::*;
+use std::time::Duration;
+use crate::radio::Signal;
 
 pub enum Status {
     ON,
@@ -26,7 +28,7 @@ impl DioMessage {
     }
 }
 
-impl IntoIterator for DioMessage{
+impl IntoIterator for DioMessage {
     type Item = u8;
     type IntoIter = <Vec<u8> as IntoIterator>::IntoIter;
 
@@ -38,10 +40,11 @@ impl IntoIterator for DioMessage{
 lazy_static! {
     pub static ref DIO_PROTOCOL: RadioProtocol<DioMessage> = {
         RadioProtocol::<DioMessage>::new(
-            Header(vec![283, 2793]),
-            Footer(vec![283, 10740]),
-            Zero(vec![283, 283, 283, 1355]),
-            One(vec![283, 1355, 283, 283]))
+            Header(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(2793))]),
+            Footer(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(10740))]),
+            Zero(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(283)), Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(1355))]),
+            One(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(1355)), Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(283))]),
+            10)
     };
 }
 

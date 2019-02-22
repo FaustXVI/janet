@@ -1,35 +1,37 @@
 use std::marker::PhantomData;
-use std::time::Duration;
+use crate::radio::Signal;
 
-pub struct Header(pub Vec<u64>);
+type Timings = Vec<Signal>;
 
-pub struct Footer(pub Vec<u64>);
+pub struct Header(pub Timings);
 
-pub struct Zero(pub Vec<u64>);
+pub struct Footer(pub Timings);
 
-pub struct One(pub Vec<u64>);
+pub struct Zero(pub Timings);
+
+pub struct One(pub Timings);
 
 pub struct RadioProtocol<T> {
-    header: Vec<u64>,
-    footer: Vec<u64>,
-    zero: Vec<u64>,
-    one: Vec<u64>,
+    header: Timings,
+    footer: Timings,
+    zero: Timings,
+    one: Timings,
+    repetition: u8,
     message: PhantomData<T>,
 }
 
 impl<T> RadioProtocol<T> {
-    pub fn new(header: Header, footer: Footer, zero: Zero, one: One) -> Self {
+    pub fn new(header: Header, footer: Footer, zero: Zero, one: One, repetition: u8) -> Self {
         RadioProtocol {
             header: header.0,
             footer: footer.0,
             zero: zero.0,
             one: one.0,
+            repetition,
             message: PhantomData,
         }
     }
 }
-
-type Timings = Vec<u64>;
 
 struct Byte(u8);
 
@@ -47,11 +49,14 @@ impl Byte {
 impl<T: IntoIterator<Item=u8>> RadioProtocol<T> {
     pub fn timings_for(&self, message: T) -> Timings {
         let mut r = vec![];
-        r.push(self.header.clone());
-        r.append(&mut message.into_iter()
-            .map(|b| self.timings_for_byte(Byte(b)))
-            .collect());
-        r.push(self.footer.clone());
+        let bytes = message.into_iter().collect::<Vec<_>>();
+        for _ in 0..self.repetition {
+            r.push(self.header.clone());
+            r.append(&mut bytes.iter()
+                .map(|&b| self.timings_for_byte(Byte(b)))
+                .collect());
+            r.push(self.footer.clone());
+        }
         r.concat()
     }
 
@@ -70,20 +75,80 @@ impl<T: IntoIterator<Item=u8>> RadioProtocol<T> {
 mod should {
     use super::*;
     use galvanic_assert::matchers::collection::*;
+    use std::time::Duration;
 
     #[test]
     fn send_byte() {
-        let protocol = RadioProtocol::new(Header(vec![13]), Footer(vec![37]), Zero(vec![0]), One(vec![1]));
+        let protocol = RadioProtocol::new(Header(vec![Signal::HIGH(Duration::from_micros(13))]),
+                                          Footer(vec![Signal::LOW(Duration::from_micros(37))]),
+                                          Zero(vec![Signal::HIGH(Duration::from_micros(0))]),
+                                          One(vec![Signal::LOW(Duration::from_micros(1))]),
+                                          1);
         let timings = protocol.timings_for(vec![5]);
-        assert_that!(&timings, contains_in_order(vec![13,0,0,0,0,0,1,0,1,37]));
+        assert_that!(&timings, contains_in_order(vec![
+        Signal::HIGH(Duration::from_micros(13)),
+        Signal::HIGH(Duration::from_micros(0)),
+        Signal::HIGH(Duration::from_micros(0)),
+        Signal::HIGH(Duration::from_micros(0)),
+        Signal::HIGH(Duration::from_micros(0)),
+        Signal::HIGH(Duration::from_micros(0)),
+        Signal::LOW(Duration::from_micros(1)),
+        Signal::HIGH(Duration::from_micros(0)),
+        Signal::LOW(Duration::from_micros(1)),
+        Signal::LOW(Duration::from_micros(37))]));
     }
 
     #[test]
     fn send_bytes() {
         let z = 10;
         let o = 11;
-        let protocol = RadioProtocol::new(Header(vec![4, 2]), Footer(vec![13, 37]), Zero(vec![z]), One(vec![o]));
+        let protocol = RadioProtocol::new(Header(vec![Signal::HIGH(Duration::from_micros(4)), Signal::LOW(Duration::from_micros(2))]),
+                                          Footer(vec![Signal::HIGH(Duration::from_micros(13)), Signal::LOW(Duration::from_micros(37))]),
+                                          Zero(vec![Signal::HIGH(Duration::from_micros(z))]),
+                                          One(vec![Signal::LOW(Duration::from_micros(o))]),
+                                          2);
         let timings = protocol.timings_for(vec![3, 7]);
-        assert_that!(&timings, contains_in_order(vec![4,2,z,z,z,z,z,z,o,o,z,z,z,z,z,o,o,o,13,37]));
+        assert_that!(&timings, contains_in_order(vec![
+        Signal::HIGH(Duration::from_micros(4)),
+        Signal::LOW(Duration::from_micros(2)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::HIGH(Duration::from_micros(13)),
+        Signal::LOW(Duration::from_micros(37)),
+        Signal::HIGH(Duration::from_micros(4)),
+        Signal::LOW(Duration::from_micros(2)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::HIGH(Duration::from_micros(z)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::LOW(Duration::from_micros(o)),
+        Signal::HIGH(Duration::from_micros(13)),
+        Signal::LOW(Duration::from_micros(37))
+        ]));
     }
 }

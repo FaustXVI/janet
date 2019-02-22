@@ -15,7 +15,6 @@ pub mod sender;
 pub mod blyss;
 pub mod house;
 pub mod raspberry;
-pub mod replay;
 pub mod dio;
 pub mod dooya;
 pub mod radio;

@@ -7,7 +7,6 @@ use crate::blyss::Blyss;
 use crate::house::MyHouse;
 use std::thread::sleep;
 use crate::pin::DigitalOutput;
-use crate::replay::Replay;
 use crate::house::CycleGenerator;
 use crate::blyss_sender::BlyssMessage;
 
@@ -19,9 +18,8 @@ pub fn create_house() -> impl House {
         pin.set_direction(Direction::Low).unwrap();
     };
     let sender = MessageSender::new(Blyss::new(pin.clone()));
-    let replayer = Replay::new(pin);
     let iter = BlyssMessage::rolling_codes();
-    MyHouse::new(sender, replayer, CycleGenerator::new(
+    MyHouse::new(sender, pin, CycleGenerator::new(
 iter
     ))
 }
@@ -29,9 +27,8 @@ iter
 pub fn create_fake_house() -> impl House {
     let pin = FakeDigitalOutput::new(23);
     let sender = MessageSender::new(Blyss::new(pin.clone()));
-    let replayer = Replay::new(pin);
     let iter = BlyssMessage::rolling_codes();
-    MyHouse::new(sender, replayer, CycleGenerator::new(iter))
+    MyHouse::new(sender, pin, CycleGenerator::new(iter))
 }
 
 #[derive(Debug,Clone)]

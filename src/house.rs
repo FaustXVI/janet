@@ -4,23 +4,22 @@ use crate::blyss_sender::BlyssMessage;
 use crate::blyss_sender::Channel;
 use crate::blyss_sender::SubChannel;
 use std::str::FromStr;
-use crate::replay::Replayer;
 use std::sync::Mutex;
 use std::cell::RefCell;
-use std::iter;
 use crate::dio::DioMessage;
 use crate::dio::DIO_PROTOCOL;
 use crate::dio;
 use crate::dooya::DOOYA_PROTOCOL;
 use crate::dooya;
+use crate::radio::Radio;
 
 pub struct MyHouse<T, R, G>
     where T: Sender<Message=BlyssMessage>,
-          R: Replayer,
+          R: Radio,
           G: Generator
 {
     light: T,
-    replayer: R,
+    radio: R,
     generator: G,
 }
 
@@ -120,16 +119,16 @@ pub trait House {
 
 impl<T, R, G> MyHouse<T, R, G>
     where T: Sender<Message=BlyssMessage>,
-          R: Replayer,
+          R: Radio,
           G: Generator {
-    pub fn new(light: T, replayer: R, generator: G) -> Self {
-        MyHouse { light, replayer, generator }
+    pub fn new(light: T, radio: R, generator: G) -> Self {
+        MyHouse { light, radio, generator }
     }
 }
 
 impl<T, R, G> House for MyHouse<T, R, G>
     where T: Sender<Message=BlyssMessage>,
-          R: Replayer,
+          R: Radio,
           G: Generator {
     fn light(&self, _room: Room, status: LightStatus) {
         let (timestamp, rolling_code) = self.generator.gen();
@@ -147,21 +146,15 @@ impl<T, R, G> House for MyHouse<T, R, G>
             BlindStatus::UP => dio::Status::UP
         };
         let message = DioMessage::new(a, s);
-        let repeated: Vec<_> = iter::repeat(DIO_PROTOCOL.timings_for(message)).take(10)
-            .flat_map(|t| t.into_iter())
-            .collect();
-        self.replayer.play(&repeated)
+        self.radio.send(message, &DIO_PROTOCOL);
     }
 
     fn screen(&self, status: BlindStatus) {
         let message = match status {
-            BlindStatus::DOWN => DOOYA_PROTOCOL.timings_for(dooya::Status::DOWN) ,
-            BlindStatus::UP => DOOYA_PROTOCOL.timings_for(dooya::Status::UP),
+            BlindStatus::DOWN => dooya::Status::DOWN,
+            BlindStatus::UP => dooya::Status::UP,
         };
-        let repeated: Vec<_> = iter::repeat(message).take(15)
-            .flat_map(|t| t.into_iter())
-            .collect();
-        self.replayer.play(&repeated)
+        self.radio.send(message, &DOOYA_PROTOCOL);
     }
 
     fn cinema(&self) {
@@ -190,14 +183,16 @@ impl<T, R, G> House for MyHouse<T, R, G>
 mod should {
     use super::*;
     use galvanic_assert::matchers::collection::*;
+    use galvanic_assert::matchers::*;
     use crate::sender::mock::*;
-    use crate::replay::mock::*;
+    use crate::pin::mock::InMemoryPin;
+    use crate::radio::mock::InMemoryRadio;
 
     #[test]
     fn switch_on_living_room() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
         let iter = (0..=1_u8).zip(2..3_u8);
-        let house = MyHouse::new(sender, InMemoryReplayer::new(), CycleGenerator::new(iter));
+        let house = MyHouse::new(sender, InMemoryPin::new(), CycleGenerator::new(iter));
         house.light(Room::LivingRoom, LightStatus::ON);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
@@ -209,7 +204,7 @@ mod should {
     fn switch_off_living_room() {
         let sender: InMemorySender<BlyssMessage> = InMemorySender::new();
         let iter = (0..=1_u8).zip(2..3_u8);
-        let house = MyHouse::new(sender, InMemoryReplayer::new(), CycleGenerator::new(iter));
+        let house = MyHouse::new(sender, InMemoryPin::new(), CycleGenerator::new(iter));
         house.light(Room::LivingRoom, LightStatus::OFF);
         let messages = house.light.messages.into_inner();
         assert_that!(&messages, contains_in_order(vec![
@@ -220,38 +215,32 @@ mod should {
     #[test]
     fn blinds() {
         for (room, status, message) in vec![
-            (Room::LivingRoom, BlindStatus::DOWN, vec![283, 2793, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 10740]),
-            (Room::LivingRoom, BlindStatus::UP, vec![283, 2793, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 10740]),
-            (Room::Kitchen, BlindStatus::DOWN, vec![283, 2793, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 10740]),
-            (Room::Kitchen, BlindStatus::UP, vec![283, 2793, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 1355, 283, 283, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 283, 283, 1355, 283, 10740]),
+            (Room::LivingRoom, BlindStatus::DOWN, DioMessage::new(0x0932, dio::Status::DOWN)),
+            (Room::LivingRoom, BlindStatus::UP, DioMessage::new(0x0932, dio::Status::UP)),
+            (Room::Kitchen, BlindStatus::DOWN, DioMessage::new(0x2600, dio::Status::DOWN)),
+            (Room::Kitchen, BlindStatus::UP, DioMessage::new(0x2600, dio::Status::UP)),
         ] {
-            let replayer = InMemoryReplayer::new();
+            let radio = InMemoryRadio::new();
             let iter = (0..=1_u8).zip(2..3_u8);
-            let house = MyHouse::new(InMemorySender::new(), replayer, CycleGenerator::new(iter));
+            let house = MyHouse::new(InMemorySender::new(), radio, CycleGenerator::new(iter));
             house.blinds(room, status);
-            let messages = house.replayer.timings.into_inner();
-            let repeated: Vec<_> = iter::repeat(message).take(10)
-                .flat_map(|t| t.into_iter())
-                .collect();
-            assert_that!(&messages, contains_in_order(repeated));
+            let received = house.radio.received(message, &DIO_PROTOCOL);
+            assert_that!(&received, eq(true));
         }
     }
 
     #[test]
     fn screen() {
         for (status, message) in vec![
-            (BlindStatus::DOWN, vec![4764, 1537, 313, 744, 313, 744, 313, 744, 313, 744, 313, 744, 643, 442, 643, 442, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 313, 744, 313, 744, 643, 442, 643, 442, 643, 442, 313, 744, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 643, 442, 643, 442, 313, 744, 313, 744, 643, 442, 643, 442, 0, 8883]),
-            (BlindStatus::UP, vec![4764, 1537, 313, 744, 313, 744, 313, 744, 313, 744, 313, 744, 643, 442, 643, 442, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 313, 744, 313, 744, 643, 442, 643, 442, 643, 442, 313, 744, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 643, 442, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643, 442, 313, 744, 313, 744, 313, 744, 643, 442, 0, 8883]),
+            (BlindStatus::DOWN, dooya::Status::DOWN),
+            (BlindStatus::UP, dooya::Status::UP),
         ] {
-            let replayer = InMemoryReplayer::new();
+            let radio = InMemoryRadio::new();
             let iter = (0..=1_u8).zip(2..3_u8);
-            let house = MyHouse::new(InMemorySender::new(), replayer, CycleGenerator::new(iter));
+            let house = MyHouse::new(InMemorySender::new(), radio, CycleGenerator::new(iter));
             house.screen(status);
-            let messages = house.replayer.timings.into_inner();
-            let repeated: Vec<_> = iter::repeat(message).take(15)
-                .flat_map(|t| t.into_iter())
-                .collect();
-            assert_that!(&messages, contains_in_order(repeated));
+            let received = house.radio.received(message, &DOOYA_PROTOCOL);
+            assert_that!(&received, eq(true));
         }
     }
 
