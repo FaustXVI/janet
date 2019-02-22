@@ -22,11 +22,11 @@ impl IntoIterator for Status {
 lazy_static! {
     pub static ref DOOYA_PROTOCOL: RadioProtocol<Status> = {
         RadioProtocol::<Status>::new(
-            Header(vec![Signal::HIGH(Duration::from_micros(4764)), Signal::LOW(Duration::from_micros(1537))]),
-            Footer(vec![Signal::LOW(Duration::from_micros(8583))]),
-            Zero(vec![Signal::HIGH(Duration::from_micros(313)), Signal::LOW(Duration::from_micros(744))]),
-            One(vec![Signal::HIGH(Duration::from_micros(643)), Signal::LOW(Duration::from_micros(442))]),
-            30)
+            Header(vec![Signal::HIGH(Duration::from_micros(4700)), Signal::LOW(Duration::from_micros(1400))]),
+            Footer(vec![Signal::LOW(Duration::from_micros(8500))]),
+            Zero(vec![Signal::HIGH(Duration::from_micros(250)), Signal::LOW(Duration::from_micros(650))]),
+            One(vec![Signal::HIGH(Duration::from_micros(600)), Signal::LOW(Duration::from_micros(300))]),
+            10)
     };
 }
 
