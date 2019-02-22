@@ -1,48 +1,16 @@
-use crate::sender::Sender;
-use crate::blyss_sender::Status;
-use crate::blyss_sender::BlyssMessage;
-use crate::blyss_sender::Channel;
-use crate::blyss_sender::SubChannel;
 use std::str::FromStr;
-use std::sync::Mutex;
-use std::cell::RefCell;
 use crate::dio::DioMessage;
 use crate::dio::DIO_PROTOCOL;
 use crate::dio;
 use crate::dooya::DOOYA_PROTOCOL;
 use crate::dooya;
 use crate::radio::Radio;
+use std::time::Duration;
 
-pub struct MyHouse<T, R, G>
-    where T: Sender<Message=BlyssMessage>,
-          R: Radio,
-          G: Generator
+pub struct MyHouse<R>
+    where R: Radio
 {
-    light: T,
-    radio: R,
-    generator: G,
-}
-
-pub trait Generator {
-    fn gen(&self) -> (u8, u8);
-}
-
-pub struct CycleGenerator {
-    iterator: Box<Mutex<RefCell<Iterator<Item=(u8, u8)> + Send>>>
-}
-
-
-impl CycleGenerator {
-    pub fn new<Iter>(iterator: Iter) -> Self
-        where Iter: Iterator<Item=(u8, u8)> + 'static + Send + Clone {
-        CycleGenerator { iterator: Box::new(Mutex::new(RefCell::new(iterator.cycle()))) }
-    }
-}
-
-impl Generator for CycleGenerator {
-    fn gen(&self) -> (u8, u8) {
-        self.iterator.lock().unwrap().borrow_mut().next().unwrap()
-    }
+    radio: R
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -87,15 +55,6 @@ pub enum LightStatus {
     OFF,
 }
 
-impl Into<Status> for LightStatus {
-    fn into(self) -> Status {
-        match self {
-            LightStatus::ON => Status::On,
-            LightStatus::OFF => Status::Off
-        }
-    }
-}
-
 impl FromStr for LightStatus {
     type Err = &'static str;
 
@@ -117,23 +76,19 @@ pub trait House {
     fn goodnight(&self);
 }
 
-impl<T, R, G> MyHouse<T, R, G>
-    where T: Sender<Message=BlyssMessage>,
-          R: Radio,
-          G: Generator {
-    pub fn new(light: T, radio: R, generator: G) -> Self {
-        MyHouse { light, radio, generator }
+impl<R> MyHouse<R>
+    where R: Radio {
+    pub fn new(radio: R) -> Self {
+        MyHouse { radio }
     }
 }
 
-impl<T, R, G> House for MyHouse<T, R, G>
-    where T: Sender<Message=BlyssMessage>,
-          R: Radio,
-          G: Generator {
+impl<R> House for MyHouse<R>
+    where R: Radio {
     fn light(&self, _room: Room, status: LightStatus) {
         let a = 0x1337;
         let s = match status {
-            LightStatus::ON=> dio::Status::ON,
+            LightStatus::ON => dio::Status::ON,
             LightStatus::OFF => dio::Status::OFF
         };
         let message = DioMessage::new(a, s);
@@ -183,13 +138,54 @@ impl<T, R, G> House for MyHouse<T, R, G>
     }
 }
 
+#[cfg(target_arch = "arm")]
+pub fn house() -> impl House {
+    use sysfs_gpio::Pin;
+    use sysfs_gpio::Direction;
+    use std::thread::sleep;
+
+    let pin = Pin::new(23);
+    pin.export().unwrap();
+    if pin.set_direction(Direction::Low).is_err() {
+        sleep(Duration::from_millis(500));
+        pin.set_direction(Direction::Low).unwrap();
+    };
+    MyHouse::new(pin)
+}
+
+#[cfg(not(target_arch = "arm"))]
+pub fn house() -> impl House {
+    use crate::pin::DigitalOutput;
+
+    #[derive(Debug, Clone)]
+    pub struct FakeDigitalOutput {
+        pin: usize
+    }
+
+    impl FakeDigitalOutput {
+        fn new(pin: usize) -> Self {
+            FakeDigitalOutput { pin }
+        }
+    }
+
+    impl DigitalOutput for FakeDigitalOutput {
+        fn high_during(&self, duration: Duration) -> () {
+            println!("high for {:?} on {}", duration, self.pin)
+        }
+
+        fn low_during(&self, duration: Duration) -> () {
+            println!("low for {:?} on {}", duration, self.pin)
+        }
+    }
+
+    let pin = FakeDigitalOutput::new(23);
+    MyHouse::new(pin)
+}
+
 #[cfg(test)]
 mod should {
     use super::*;
-    use galvanic_assert::matchers::collection::*;
     use galvanic_assert::matchers::*;
-    use crate::sender::mock::*;
-    use crate::pin::mock::InMemoryPin;
     use crate::radio::mock::InMemoryRadio;
 
     #[test]
@@ -199,8 +195,7 @@ mod should {
             (Room::LivingRoom, LightStatus::OFF, DioMessage::new(0x1337, dio::Status::OFF)),
         ] {
             let radio = InMemoryRadio::new();
-            let iter = (0..=1_u8).zip(2..3_u8);
-            let house = MyHouse::new(InMemorySender::new(), radio, CycleGenerator::new(iter));
+            let house = MyHouse::new(radio);
             house.light(room, status);
             let received = house.radio.received(message, &DIO_PROTOCOL);
             assert_that!(&received, eq(true));
@@ -216,8 +211,7 @@ mod should {
             (Room::Kitchen, BlindStatus::UP, DioMessage::new(0x2600, dio::Status::UP)),
         ] {
             let radio = InMemoryRadio::new();
-            let iter = (0..=1_u8).zip(2..3_u8);
-            let house = MyHouse::new(InMemorySender::new(), radio, CycleGenerator::new(iter));
+            let house = MyHouse::new( radio);
             house.blinds(room, status);
             let received = house.radio.received(message, &DIO_PROTOCOL);
             assert_that!(&received, eq(true));
@@ -231,8 +225,7 @@ mod should {
             (BlindStatus::UP, dooya::Status::UP),
         ] {
             let radio = InMemoryRadio::new();
-            let iter = (0..=1_u8).zip(2..3_u8);
-            let house = MyHouse::new(InMemorySender::new(), radio, CycleGenerator::new(iter));
+            let house = MyHouse::new(radio);
             house.screen(status);
             let received = house.radio.received(message, &DOOYA_PROTOCOL);
             assert_that!(&received, eq(true));

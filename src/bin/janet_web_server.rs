@@ -2,15 +2,14 @@
 
 extern crate sysfs_gpio;
 
-use rocket::State;
-use janet::house::House;
+use std::thread;
 use std::sync::Arc;
+use rocket::State;
 use rocket_contrib::templates::Template;
 use rocket_contrib::serve::StaticFiles;
 use rocket::response::Redirect;
 use rocket::request::Form;
-use janet::house::Room;
-use std::thread;
+use janet::house::*;
 
 
 #[macro_use]
@@ -84,16 +83,6 @@ fn mode(house: State<SafeHouse>, mode: Form<Mode>) -> Redirect {
         _ => {}
     };
     Redirect::to("/")
-}
-
-#[cfg(target_arch = "arm")]
-fn house() -> impl House {
-    janet::raspberry::create_house()
-}
-
-#[cfg(not(target_arch = "arm"))]
-fn house() -> impl House {
-    janet::raspberry::create_fake_house()
 }
 
 fn main() {

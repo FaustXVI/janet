@@ -8,13 +8,8 @@ extern crate sysfs_gpio;
 extern crate galvanic_assert;
 
 pub mod pin;
-pub mod radio_emitter;
 pub mod radio_protocol;
-pub mod blyss_sender;
-pub mod sender;
-pub mod blyss;
-pub mod house;
-pub mod raspberry;
+pub mod radio;
 pub mod dio;
 pub mod dooya;
-pub mod radio;
+pub mod house;
