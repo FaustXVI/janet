@@ -89,9 +89,9 @@ impl<R> House for MyHouse<R>
     where R: Radio {
     fn light(&self, room: Room, status: LightStatus) {
         let a = match room {
-            Room::LivingRoom => 0x271337,
-            Room::Kitchen => 0x000000,
-            Room::BedRoom => 0x7c985c,
+            Room::LivingRoom => 0x1337,
+            Room::Kitchen => 0x0000,
+            Room::BedRoom => 0x985c,
         };
         let s = match status {
             LightStatus::ON => dio::Status::ON,
@@ -103,9 +103,9 @@ impl<R> House for MyHouse<R>
 
     fn blinds(&self, room: Room, status: BlindStatus) {
         let a = match room {
-            Room::LivingRoom => 0x270932,
-            Room::Kitchen => 0x272600,
-            Room::BedRoom => 0x000000,
+            Room::LivingRoom => 0x0932,
+            Room::Kitchen => 0x2600,
+            Room::BedRoom => 0x0000,
         };
         let s = match status {
             BlindStatus::DOWN => dio::Status::DOWN,
@@ -198,10 +198,10 @@ mod should {
     #[test]
     fn  lights() {
         for (room, status, message) in vec![
-            (Room::LivingRoom, LightStatus::ON, DioMessage::new(0x271337, dio::Status::ON)),
-            (Room::LivingRoom, LightStatus::OFF, DioMessage::new(0x271337, dio::Status::OFF)),
-            (Room::BedRoom, LightStatus::ON, DioMessage::new(0x7c985c, dio::Status::ON)),
-            (Room::BedRoom, LightStatus::OFF, DioMessage::new(0x7c985c, dio::Status::OFF)),
+            (Room::LivingRoom, LightStatus::ON, DioMessage::new(0x1337, dio::Status::ON)),
+            (Room::LivingRoom, LightStatus::OFF, DioMessage::new(0x1337, dio::Status::OFF)),
+            (Room::BedRoom, LightStatus::ON, DioMessage::new(0x985c, dio::Status::ON)),
+            (Room::BedRoom, LightStatus::OFF, DioMessage::new(0x985c, dio::Status::OFF)),
         ] {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new(radio);
@@ -214,10 +214,10 @@ mod should {
     #[test]
     fn blinds() {
         for (room, status, message) in vec![
-            (Room::LivingRoom, BlindStatus::DOWN, DioMessage::new(0x270932, dio::Status::DOWN)),
-            (Room::LivingRoom, BlindStatus::UP, DioMessage::new(0x270932, dio::Status::UP)),
-            (Room::Kitchen, BlindStatus::DOWN, DioMessage::new(0x272600, dio::Status::DOWN)),
-            (Room::Kitchen, BlindStatus::UP, DioMessage::new(0x272600, dio::Status::UP)),
+            (Room::LivingRoom, BlindStatus::DOWN, DioMessage::new(0x0932, dio::Status::DOWN)),
+            (Room::LivingRoom, BlindStatus::UP, DioMessage::new(0x0932, dio::Status::UP)),
+            (Room::Kitchen, BlindStatus::DOWN, DioMessage::new(0x2600, dio::Status::DOWN)),
+            (Room::Kitchen, BlindStatus::UP, DioMessage::new(0x2600, dio::Status::UP)),
         ] {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new( radio);
