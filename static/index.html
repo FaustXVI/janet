@@ -95,12 +95,14 @@
             </div>
             <div class="col">
                 <form action="/api/light" method="post" class="form-group">
+                    <input type="hidden" name="room" value="LivingRoom">
                     <input type="hidden" name="status" value="On">
                     <input type="submit" value="On" class="btn btn-lg btn-block btn-janet">
                 </form>
             </div>
             <div class="col">
                 <form action="/api/light" method="post" class="form-group">
+                    <input type="hidden" name="room" value="LivingRoom">
                     <input type="hidden" name="status" value="Off">
                     <input type="submit" value="Off" class="btn btn-lg btn-block btn-janet active">
                 </form>
@@ -139,6 +141,30 @@
                 <form action="/api/screen" method="post" class="form-group">
                     <input type="hidden" name="status" value="Down">
                     <input type="submit" value="Down" class="btn btn-lg btn-block btn-janet active">
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Bed room</h2>
+
+        <div class="row">
+            <div class="col">
+                <h3 class="h-100"><span class="align-middle">Lights</span></h3>
+            </div>
+            <div class="col">
+                <form action="/api/light" method="post" class="form-group">
+                    <input type="hidden" name="room" value="BedRoom">
+                    <input type="hidden" name="status" value="On">
+                    <input type="submit" value="On" class="btn btn-lg btn-block btn-janet">
+                </form>
+            </div>
+            <div class="col">
+                <form action="/api/light" method="post" class="form-group">
+                    <input type="hidden" name="room" value="BedRoom">
+                    <input type="hidden" name="status" value="Off">
+                    <input type="submit" value="Off" class="btn btn-lg btn-block btn-janet active">
                 </form>
             </div>
         </div>

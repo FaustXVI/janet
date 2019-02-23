@@ -33,20 +33,20 @@ struct NewStatus {
     status: String
 }
 
-#[post("/light", data = "<status>")]
-fn light(house: State<SafeHouse>, status: Form<NewStatus>) -> Redirect {
-    if let Ok(status) = status.status.parse() {
-        house.execute(move |h| {
-            h.light(Room::LivingRoom, status);
-        })
-    }
-    Redirect::to("/")
-}
-
 #[derive(FromForm)]
 struct Order {
     status: String,
     room: String,
+}
+
+#[post("/light", data = "<status>")]
+fn light(house: State<SafeHouse>, status: Form<Order>) -> Redirect {
+    if let (Ok(room), Ok(status)) = (status.room.parse(), status.status.parse()) {
+        house.execute(move |h| {
+            h.light(room, status);
+        })
+    }
+    Redirect::to("/")
 }
 
 #[post("/blinds", data = "<status>")]

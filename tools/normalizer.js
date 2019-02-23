@@ -28,7 +28,7 @@ const normalize = array => {
             }
             values = norms[i];
             i++;
-        } while (!(values.length === 0 || Math.abs(average(values) - value) < value * 0.05));
+        } while (!(values.length === 0 || Math.abs(average(values) - value) < value * 0.15));
 
         values.push(value);
     }
