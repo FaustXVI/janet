@@ -40,12 +40,11 @@ impl IntoIterator for DioMessage {
 
 lazy_static! {
     pub static ref DIO_PROTOCOL: RadioProtocol<DioMessage> = {
-    // FIXME there is a 100 micro seconds more sent by janet
         RadioProtocol::<DioMessage>::new(
-            Header(vec![Signal::HIGH(Duration::from_micros(183)), Signal::LOW(Duration::from_micros(2693))]),
-            Footer(vec![Signal::HIGH(Duration::from_micros(183)), Signal::LOW(Duration::from_micros(10440))]),
-            Zero(vec![Signal::HIGH(Duration::from_micros(183)), Signal::LOW(Duration::from_micros(183)), Signal::HIGH(Duration::from_micros(183)), Signal::LOW(Duration::from_micros(1255))]),
-            One(vec![Signal::HIGH(Duration::from_micros(183)), Signal::LOW(Duration::from_micros(1255)), Signal::HIGH(Duration::from_micros(183)), Signal::LOW(Duration::from_micros(183))]),
+            Header(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(2793))]),
+            Footer(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(10540))]),
+            Zero(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(283)), Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(1355))]),
+            One(vec![Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(1355)), Signal::HIGH(Duration::from_micros(283)), Signal::LOW(Duration::from_micros(283))]),
             10)
     };
 }

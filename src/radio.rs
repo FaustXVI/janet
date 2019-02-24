@@ -13,9 +13,16 @@ pub trait Radio {
         where M: IntoIterator<Item=u8>;
 }
 
+const DELAY_CORRECTION: Duration = Duration::from_micros(100);
+
 impl<T: DigitalOutput> Radio for T {
     fn send<M>(&self, message: M, protocol: &RadioProtocol<M>) where M: IntoIterator<Item=u8> {
-        for s in protocol.timings_for(message) {
+        let timings = protocol.timings_for(message);
+        let corrected_timings: Vec<Signal> = timings.iter().map(|s| match *s {
+            Signal::LOW(d) => Signal::LOW(d - DELAY_CORRECTION),
+            Signal::HIGH(d) => Signal::HIGH(d - DELAY_CORRECTION),
+        }).collect();
+        for s in corrected_timings {
             match s {
                 Signal::HIGH(d) => self.high_during(d),
                 Signal::LOW(d) => self.low_during(d)
@@ -36,11 +43,11 @@ pub mod should {
     fn replay_timings() {
         let message = vec![5];
         let protocol = RadioProtocol::new(
-            Header(vec![Signal::HIGH(Duration::from_micros(13))]),
-            Footer(vec![Signal::LOW(Duration::from_micros(37))]),
-            Zero(vec![Signal::LOW(Duration::from_micros(0))]),
-            One(vec![Signal::HIGH(Duration::from_micros(1))]),
-            1
+            Header(vec![Signal::HIGH(Duration::from_micros(13 + 100))]),
+            Footer(vec![Signal::LOW(Duration::from_micros(37 + 100))]),
+            Zero(vec![Signal::LOW(Duration::from_micros(0 + 100))]),
+            One(vec![Signal::HIGH(Duration::from_micros(1 + 100))]),
+            1,
         );
         let radio = InMemoryPin::new();
         radio.send(message, &protocol);
