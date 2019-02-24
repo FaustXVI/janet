@@ -12,4 +12,5 @@ pub mod radio_protocol;
 pub mod radio;
 pub mod dio;
 pub mod dooya;
+pub mod celexon;
 pub mod house;

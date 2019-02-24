@@ -4,6 +4,7 @@ use crate::dio::DIO_PROTOCOL;
 use crate::dio;
 use crate::dooya::DOOYA_PROTOCOL;
 use crate::dooya;
+use crate::celexon;
 use crate::radio::Radio;
 use std::time::Duration;
 
@@ -102,17 +103,25 @@ impl<R> House for MyHouse<R>
     }
 
     fn blinds(&self, room: Room, status: BlindStatus) {
-        let a = match room {
-            Room::LivingRoom => 0x0932,
-            Room::Kitchen => 0x2600,
-            Room::BedRoom => 0x0000,
-        };
-        let s = match status {
-            BlindStatus::DOWN => dio::Status::DOWN,
-            BlindStatus::UP => dio::Status::UP
-        };
-        let message = DioMessage::new(a, s);
-        self.radio.send(message, &DIO_PROTOCOL);
+        if room == Room::BedRoom {
+            let s = match status {
+                BlindStatus::DOWN => celexon::Status::DOWN,
+                BlindStatus::UP => celexon::Status::UP
+            };
+            self.radio.send(s, &celexon::CELEXON_PROTOCOL)
+        } else {
+            let a = match room {
+                Room::LivingRoom => 0x0932,
+                Room::Kitchen => 0x2600,
+                Room::BedRoom => 0x0000,
+            };
+            let s = match status {
+                BlindStatus::DOWN => dio::Status::DOWN,
+                BlindStatus::UP => dio::Status::UP
+            };
+            let message = DioMessage::new(a, s);
+            self.radio.send(message, &DIO_PROTOCOL);
+        }
     }
 
     fn screen(&self, status: BlindStatus) {
@@ -196,7 +205,7 @@ mod should {
     use crate::radio::mock::InMemoryRadio;
 
     #[test]
-    fn  lights() {
+    fn lights() {
         for (room, status, message) in vec![
             (Room::LivingRoom, LightStatus::ON, DioMessage::new(0x1337, dio::Status::ON)),
             (Room::LivingRoom, LightStatus::OFF, DioMessage::new(0x1337, dio::Status::OFF)),
@@ -213,16 +222,26 @@ mod should {
 
     #[test]
     fn blinds() {
-        for (room, status, message) in vec![
-            (Room::LivingRoom, BlindStatus::DOWN, DioMessage::new(0x0932, dio::Status::DOWN)),
-            (Room::LivingRoom, BlindStatus::UP, DioMessage::new(0x0932, dio::Status::UP)),
-            (Room::Kitchen, BlindStatus::DOWN, DioMessage::new(0x2600, dio::Status::DOWN)),
-            (Room::Kitchen, BlindStatus::UP, DioMessage::new(0x2600, dio::Status::UP)),
+        for (room, status, message, protocol) in vec![
+            (Room::LivingRoom, BlindStatus::DOWN, DioMessage::new(0x0932, dio::Status::DOWN), &DIO_PROTOCOL),
+            (Room::LivingRoom, BlindStatus::UP, DioMessage::new(0x0932, dio::Status::UP), &DIO_PROTOCOL),
+            (Room::Kitchen, BlindStatus::DOWN, DioMessage::new(0x2600, dio::Status::DOWN), &DIO_PROTOCOL),
+            (Room::Kitchen, BlindStatus::UP, DioMessage::new(0x2600, dio::Status::UP), &DIO_PROTOCOL),
         ] {
             let radio = InMemoryRadio::new();
-            let house = MyHouse::new( radio);
+            let house = MyHouse::new(radio);
             house.blinds(room, status);
-            let received = house.radio.received(message, &DIO_PROTOCOL);
+            let received = house.radio.received(message, protocol);
+            assert_that!(&received, eq(true));
+        }
+        for (room, status, message, protocol) in vec![
+            (Room::BedRoom, BlindStatus::DOWN, celexon::Status::DOWN, &celexon::CELEXON_PROTOCOL),
+            (Room::BedRoom, BlindStatus::UP, celexon::Status::UP, &celexon::CELEXON_PROTOCOL),
+        ] {
+            let radio = InMemoryRadio::new();
+            let house = MyHouse::new(radio);
+            house.blinds(room, status);
+            let received = house.radio.received(message, protocol);
             assert_that!(&received, eq(true));
         }
     }
