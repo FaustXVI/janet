@@ -142,15 +142,19 @@ impl<R> House for MyHouse<R>
     fn goodmorning(&self) {
         self.blinds(Room::LivingRoom, BlindStatus::UP);
         self.blinds(Room::Kitchen, BlindStatus::UP);
+        self.blinds(Room::BedRoom, BlindStatus::UP);
         self.screen(BlindStatus::UP);
         self.light(Room::LivingRoom, LightStatus::OFF);
+        self.light(Room::BedRoom, LightStatus::OFF);
     }
 
     fn goodnight(&self) {
         self.blinds(Room::LivingRoom, BlindStatus::DOWN);
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
+        self.blinds(Room::BedRoom, BlindStatus::DOWN);
         self.screen(BlindStatus::UP);
         self.light(Room::LivingRoom, LightStatus::OFF);
+        self.light(Room::BedRoom, LightStatus::OFF);
     }
 }
 
