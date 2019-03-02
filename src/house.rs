@@ -91,7 +91,7 @@ impl<R> House for MyHouse<R>
     fn light(&self, room: Room, status: LightStatus) {
         let a = match room {
             Room::LivingRoom => 0x1337,
-            Room::Kitchen => 0x0000,
+            Room::Kitchen => 0x0042,
             Room::BedRoom => 0x985c,
         };
         let s = match status {
@@ -132,11 +132,13 @@ impl<R> House for MyHouse<R>
         self.radio.send(message, &DOOYA_PROTOCOL);
     }
 
+    // modes should be configuration
     fn cinema(&self) {
         self.blinds(Room::LivingRoom, BlindStatus::DOWN);
         self.blinds(Room::Kitchen, BlindStatus::DOWN);
         self.screen(BlindStatus::DOWN);
         self.light(Room::LivingRoom, LightStatus::OFF);
+        self.light(Room::Kitchen, LightStatus::OFF);
     }
 
     fn goodmorning(&self) {
@@ -146,6 +148,7 @@ impl<R> House for MyHouse<R>
         self.screen(BlindStatus::UP);
         self.light(Room::LivingRoom, LightStatus::OFF);
         self.light(Room::BedRoom, LightStatus::OFF);
+        self.light(Room::Kitchen, LightStatus::OFF);
     }
 
     fn goodnight(&self) {
@@ -155,6 +158,7 @@ impl<R> House for MyHouse<R>
         self.screen(BlindStatus::UP);
         self.light(Room::LivingRoom, LightStatus::OFF);
         self.light(Room::BedRoom, LightStatus::OFF);
+        self.light(Room::Kitchen, LightStatus::OFF);
     }
 }
 
@@ -215,6 +219,8 @@ mod should {
             (Room::LivingRoom, LightStatus::OFF, DioMessage::new(0x1337, dio::Status::OFF)),
             (Room::BedRoom, LightStatus::ON, DioMessage::new(0x985c, dio::Status::ON)),
             (Room::BedRoom, LightStatus::OFF, DioMessage::new(0x985c, dio::Status::OFF)),
+            (Room::Kitchen, LightStatus::ON, DioMessage::new(0x0042, dio::Status::ON)),
+            (Room::Kitchen, LightStatus::OFF, DioMessage::new(0x0042, dio::Status::OFF)),
         ] {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new(radio);
