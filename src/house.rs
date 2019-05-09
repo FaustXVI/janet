@@ -8,6 +8,7 @@ use crate::celexon;
 use crate::radio::Radio;
 use std::time::Duration;
 use std::sync::Mutex;
+use crate::radio_protocol::RadioProtocol;
 
 pub struct MyHouse<R>
     where R: Radio
@@ -85,6 +86,12 @@ impl<R> MyHouse<R>
     pub fn new(radio: R) -> Self {
         MyHouse { radio: Mutex::new(radio) }
     }
+    fn send<M>(&self, message: M, protocol: &RadioProtocol<M>) where M: IntoIterator<Item=u8> {
+        let r = self.radio.lock().expect("Can't get lock on radio");
+        unsafe {
+            r.send(message, protocol);
+        }
+    }
 }
 
 impl<R> House for MyHouse<R>
@@ -100,10 +107,7 @@ impl<R> House for MyHouse<R>
             LightStatus::OFF => dio::Status::OFF
         };
         let message = DioMessage::new(a, s);
-        let r = self.radio.lock().expect("Can't get lock on radio");
-        unsafe {
-            r.send(message, &DIO_PROTOCOL);
-        }
+        self.send(message, &DIO_PROTOCOL);
     }
 
     fn blinds(&self, room: Room, status: BlindStatus) {
@@ -112,10 +116,7 @@ impl<R> House for MyHouse<R>
                 BlindStatus::DOWN => celexon::Status::DOWN,
                 BlindStatus::UP => celexon::Status::UP
             };
-            let r = self.radio.lock().expect("Can't get lock on radio");
-            unsafe {
-                r.send(s, &celexon::CELEXON_PROTOCOL)
-            }
+            self.send(s, &celexon::CELEXON_PROTOCOL)
         } else {
             let a = match room {
                 Room::LivingRoom => 0x0932,
@@ -127,10 +128,7 @@ impl<R> House for MyHouse<R>
                 BlindStatus::UP => dio::Status::UP
             };
             let message = DioMessage::new(a, s);
-            let r = self.radio.lock().expect("Can't get lock on radio");
-            unsafe {
-                r.send(message, &DIO_PROTOCOL)
-            }
+            self.send(message, &DIO_PROTOCOL)
         }
     }
 
@@ -139,10 +137,7 @@ impl<R> House for MyHouse<R>
             BlindStatus::DOWN => dooya::Status::DOWN,
             BlindStatus::UP => dooya::Status::UP,
         };
-        let r = self.radio.lock().expect("Can't get lock on radio");
-        unsafe {
-            r.send(message, &DOOYA_PROTOCOL)
-        }
+        self.send(message, &DOOYA_PROTOCOL)
     }
 
     // modes should be configuration
