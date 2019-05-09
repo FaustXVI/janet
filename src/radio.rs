@@ -9,14 +9,15 @@ pub enum Signal {
 }
 
 pub trait Radio {
-    fn send<M>(&self, message: M, protocol: &RadioProtocol<M>)
+    /// no thread safe garantees
+    unsafe fn send<M>(&self, message: M, protocol: &RadioProtocol<M>)
         where M: IntoIterator<Item=u8>;
 }
 
 const DELAY_CORRECTION: Duration = Duration::from_micros(100);
 
 impl<T: DigitalOutput> Radio for T {
-    fn send<M>(&self, message: M, protocol: &RadioProtocol<M>) where M: IntoIterator<Item=u8> {
+    unsafe fn send<M>(&self, message: M, protocol: &RadioProtocol<M>) where M: IntoIterator<Item=u8> {
         let timings = protocol.timings_for(message);
         let corrected_timings: Vec<Signal> = timings.iter().map(|s| match *s {
             Signal::LOW(d) => Signal::LOW(d - DELAY_CORRECTION),
@@ -50,7 +51,9 @@ pub mod should {
             1,
         );
         let radio = InMemoryPin::new();
-        radio.send(message, &protocol);
+        unsafe {
+            radio.send(message, &protocol);
+        }
         let states = radio.states.into_inner();
         assert_that!(&states, contains_in_order(vec![
         (PinState::HIGH, Duration::from_micros(13)),
@@ -90,7 +93,7 @@ pub mod mock {
     }
 
     impl Radio for InMemoryRadio {
-        fn send<M>(&self, message: M, protocol: &RadioProtocol<M>) where M: IntoIterator<Item=u8> {
+        unsafe fn send<M>(&self, message: M, protocol: &RadioProtocol<M>) where M: IntoIterator<Item=u8> {
             self.signals.replace(Some(protocol.timings_for(message)));
         }
     }

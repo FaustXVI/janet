@@ -7,11 +7,12 @@ use crate::dooya;
 use crate::celexon;
 use crate::radio::Radio;
 use std::time::Duration;
+use std::sync::Mutex;
 
 pub struct MyHouse<R>
     where R: Radio
 {
-    radio: R
+    radio: Mutex<R>
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
@@ -82,7 +83,7 @@ pub trait House {
 impl<R> MyHouse<R>
     where R: Radio {
     pub fn new(radio: R) -> Self {
-        MyHouse { radio }
+        MyHouse { radio: Mutex::new(radio) }
     }
 }
 
@@ -99,7 +100,10 @@ impl<R> House for MyHouse<R>
             LightStatus::OFF => dio::Status::OFF
         };
         let message = DioMessage::new(a, s);
-        self.radio.send(message, &DIO_PROTOCOL);
+        let r = self.radio.lock().expect("Can't get lock on radio");
+        unsafe {
+            r.send(message, &DIO_PROTOCOL);
+        }
     }
 
     fn blinds(&self, room: Room, status: BlindStatus) {
@@ -108,7 +112,10 @@ impl<R> House for MyHouse<R>
                 BlindStatus::DOWN => celexon::Status::DOWN,
                 BlindStatus::UP => celexon::Status::UP
             };
-            self.radio.send(s, &celexon::CELEXON_PROTOCOL)
+            let r = self.radio.lock().expect("Can't get lock on radio");
+            unsafe {
+                r.send(s, &celexon::CELEXON_PROTOCOL)
+            }
         } else {
             let a = match room {
                 Room::LivingRoom => 0x0932,
@@ -120,7 +127,10 @@ impl<R> House for MyHouse<R>
                 BlindStatus::UP => dio::Status::UP
             };
             let message = DioMessage::new(a, s);
-            self.radio.send(message, &DIO_PROTOCOL);
+            let r = self.radio.lock().expect("Can't get lock on radio");
+            unsafe {
+                r.send(message, &DIO_PROTOCOL)
+            }
         }
     }
 
@@ -129,7 +139,10 @@ impl<R> House for MyHouse<R>
             BlindStatus::DOWN => dooya::Status::DOWN,
             BlindStatus::UP => dooya::Status::UP,
         };
-        self.radio.send(message, &DOOYA_PROTOCOL);
+        let r = self.radio.lock().expect("Can't get lock on radio");
+        unsafe {
+            r.send(message, &DOOYA_PROTOCOL)
+        }
     }
 
     // modes should be configuration
@@ -225,7 +238,7 @@ mod should {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new(radio);
             house.light(room, status);
-            let received = house.radio.received(message, &DIO_PROTOCOL);
+            let received = house.radio.lock().unwrap().received(message, &DIO_PROTOCOL);
             assert_that!(&received, eq(true));
         }
     }
@@ -241,7 +254,7 @@ mod should {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new(radio);
             house.blinds(room, status);
-            let received = house.radio.received(message, protocol);
+            let received = house.radio.lock().unwrap().received(message, protocol);
             assert_that!(&received, eq(true));
         }
         for (room, status, message, protocol) in vec![
@@ -251,7 +264,7 @@ mod should {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new(radio);
             house.blinds(room, status);
-            let received = house.radio.received(message, protocol);
+            let received = house.radio.lock().unwrap().received(message, protocol);
             assert_that!(&received, eq(true));
         }
     }
@@ -265,7 +278,7 @@ mod should {
             let radio = InMemoryRadio::new();
             let house = MyHouse::new(radio);
             house.screen(status);
-            let received = house.radio.received(message, &DOOYA_PROTOCOL);
+            let received = house.radio.lock().unwrap().received(message, &DOOYA_PROTOCOL);
             assert_that!(&received, eq(true));
         }
     }
